@@ -9,6 +9,16 @@ import os
 from werkzeug.utils import secure_filename
 from flask import Flask, request, jsonify, render_template, redirect, url_for, session, flash
 
+# Configurações do banco de dados Supabase
+DB_HOST = os.environ.get('DB_HOST', 'db.dragqlunhkahtgxvpmmu.supabase.co')
+DB_NAME = os.environ.get('DB_NAME', 'postgres')
+DB_USER = os.environ.get('DB_USER', 'postgres')
+DB_PASS = os.environ.get('DB_PASS', 'J-v4T*-TkPgxyp6')
+DB_PORT = os.environ.get('DB_PORT', '5432')
+
+# Construindo a string de conexão SQLAlchemy para PostgreSQL
+SQLALCHEMY_DATABASE_URI = f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+
 
 
 app = Flask(__name__)
@@ -30,6 +40,8 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
 
 # Modelos do banco de dados
 class Trainer(db.Model):
