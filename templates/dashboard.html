@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MegaPersonal - Dashboard</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background-color: #db7f34;
+            color: white;
+            padding: 15px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        .logo h1 {
+            margin: 0;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+        }
+        .user-info a {
+            color: white;
+            text-decoration: none;
+            margin-left: 15px;
+        }
+        .user-info a:hover {
+            text-decoration: underline;
+        }
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        .stat-card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 20px;
+            text-align: center;
+        }
+        .stat-card h2 {
+            font-size: 36px;
+            margin: 10px 0;
+            color: #db7f34;
+        }
+        .stat-card p {
+            color: #7f8c8d;
+            margin: 0;
+        }
+        .section-title {
+            margin: 30px 0 20px 0;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+        .session-list {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f4f7f6;
+            font-weight: bold;
+        }
+        .navbar {
+            background-color: #db7f34;
+            padding: 10px 0;
+        }
+        .nav-links {
+            display: flex;
+            list-style: none;
+            margin: 0;
+            padding: 0 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .nav-links li {
+            margin-right: 20px;
+        }
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            padding: 5px 0;
+        }
+        .nav-links a:hover {
+            border-bottom: 2px solid white;
+        }
+        .button {
+            background-color: #db7f34;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            text-decoration: none;
+            display: inline-block;
+            cursor: pointer;
+        }
+        .button:hover {
+            background-color: #db7f34;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <div class="logo">
+                <h1>MegaPersonal</h1>
+            </div>
+            <div class="user-info">
+                <span>Bem-vindo, {{ trainer.name }}</span>
+                <a href="{{ url_for('logout') }}">Sair</a>
+            </div>
+        </div>
+    </header>
+    
+    <nav class="navbar">
+        <ul class="nav-links">
+            <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+            <li><a href="{{ url_for('client_list') }}">Clientes</a></li>
+            <li><a href="{{ url_for('exercises') }}">Exercícios</a></li>
+        </ul>
+    </nav>
+    
+    <div class="container">
+        <div class="stats-container">
+            <div class="stat-card">
+                <p>Total de Clientes</p>
+                <h2>{{ client_count }}</h2>
+            </div>
+            <div class="stat-card">
+                <p>Sessões Hoje</p>
+                <h2>{{ attendances_today|length }}</h2>
+            </div>
+            <div class="stat-card">
+                <p>Avaliações este Mês</p>
+                <h2>0</h2>
+            </div>
+            <div class="stat-card">
+                <p>Taxa de Presença</p>
+                <h2>0%</h2>
+            </div>
+        </div>
+        
+        <h2 class="section-title">Sessões de Hoje</h2>
+        
+        <div class="session-list">
+            {% if attendances_today %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Horário</th>
+                        <th>Cliente</th>
+                        <th>Treino</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for attendance in attendances_today %}
+                    <tr>
+                        <td>{{ attendance.date.strftime('%H:%M') }}</td>
+                        <td>{{ attendance.client.name }}</td>
+                        <td>
+                            {% if attendance.workout %}
+                            {{ attendance.workout.name }}
+                            {% else %}
+                            Não definido
+                            {% endif %}
+                        </td>
+                        <td>{{ attendance.status }}</td>
+                        <td>
+                            <a href="#" class="button">Registrar</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p>Não há sessões agendadas para hoje.</p>
+            {% endif %}
+        </div>
+        
+        <h2 class="section-title">Clientes Recentes</h2>
+        
+        <div class="session-list">
+            {% if clients %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Email</th>
+                        <th>Telefone</th>
+                        <th>Objetivo</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for client in clients[:5] %}
+                    <tr>
+                        <td>{{ client.name }}</td>
+                        <td>{{ client.email }}</td>
+                        <td>{{ client.phone }}</td>
+                        <td>{{ client.goal }}</td>
+                        <td>
+                            <a href="{{ url_for('client_detail', client_id=client.id) }}" class="button">Ver</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p>Você ainda não tem clientes cadastrados.</p>
+            {% endif %}
+            
+            <div style="margin-top: 20px; text-align: right;">
+                <a href="{{ url_for('client_new') }}" class="button">Adicionar Cliente</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

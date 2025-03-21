@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MegaPersonal - Login</title>
+    <style>
+        /* Estilos gerais responsivos */
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f4f7f6;
+    margin: 0;
+    padding: 0;
+    font-size: 16px; /* Base font size */
+}
+
+.container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 15px;
+    box-sizing: border-box;
+}
+
+/* Menu responsivo */
+.nav-links {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    flex-wrap: wrap; /* Permite que itens de menu quebrem em linhas */
+}
+
+.nav-links li {
+    margin-right: 15px;
+    margin-bottom: 5px;
+}
+
+/* Botões responsivos */
+.button {
+    display: inline-block;
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    min-width: 80px;
+    text-align: center;
+}
+
+/* Tabelas responsivas */
+.table-responsive {
+    overflow-x: auto;
+    width: 100%;
+    -webkit-overflow-scrolling: touch;
+}
+
+table {
+    min-width: 600px; /* Garante que a tabela não fique muito espremida */
+}
+
+/* Formulários responsivos */
+.form-row {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.form-group {
+    flex: 1 1 250px; /* Base de 250px, mas pode crescer ou encolher */
+    min-width: 0; /* Permite que o flex item encolha abaixo da sua largura de conteúdo */
+}
+
+input, select, textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+/* Cards responsivos */
+.card {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Media queries para diferentes tamanhos de tela */
+@media (max-width: 768px) {
+    /* Ajustes para tablets */
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .page-header h1 {
+        margin-bottom: 10px;
+    }
+    
+    .button-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .button {
+        margin: 0;
+    }
+    
+    .client-header, .workout-details {
+        flex-direction: column;
+    }
+    
+    .workout-actions {
+        margin-top: 15px;
+        align-items: flex-start;
+    }
+    
+    .workout-actions .button {
+        width: 100%;
+    }
+    
+    /* Campos de 2 colunas em telas menores */
+    .data-row {
+        flex-direction: column;
+    }
+    
+    .data-label {
+        width: 100%;
+        margin-bottom: 5px;
+    }
+    
+    .data-values, .data-value {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Ajustes para smartphones */
+    body {
+        font-size: 14px;
+    }
+    
+    .container {
+        padding: 10px;
+    }
+    
+    .nav-links {
+        flex-direction: column;
+    }
+    
+    .nav-links li {
+        margin-right: 0;
+        margin-bottom: 8px;
+    }
+    
+    .form-group {
+        flex: 1 1 100%; /* Em telefones, campos ocupam 100% da largura */
+    }
+    
+    .search-box {
+        width: 100%;
+    }
+    
+    /* Simplificar tabelas em telas muito pequenas */
+    table, thead, tbody, th, td, tr {
+        display: block;
+    }
+    
+    thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+    }
+    
+    tr {
+        border: 1px solid #ccc;
+        margin-bottom: 15px;
+    }
+    
+    td {
+        border: none;
+        border-bottom: 1px solid #eee;
+        position: relative;
+        padding-left: 50%;
+        text-align: right;
+    }
+    
+    td:before {
+        position: absolute;
+        top: 12px;
+        left: 15px;
+        width: 45%;
+        padding-right: 10px;
+        white-space: nowrap;
+        text-align: left;
+        font-weight: bold;
+        content: attr(data-label);
+    }
+    
+    /* Ajustes nos espaçamentos */
+    .form-row {
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+}
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .login-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 350px;
+            margin: 20px;
+        }
+        .logo {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .logo h1 {
+            color: #db7f34;
+            margin: 0;
+        }
+        .logo p {
+            margin-top: 5px;
+            color: #7f8c8d;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        input[type="text"],
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #db7f34;
+            color: white;
+            border: none;
+            padding: 12px 0;
+            width: 100%;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #db7f34;
+        }
+        .error-message {
+            color: #e74c3c;
+            margin-top: 15px;
+            text-align: center;
+        }
+        .user-type-selector {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .user-type-tabs {
+            display: flex;
+            border-radius: 4px;
+            overflow: hidden;
+            border: 1px solid #ddd;
+        }
+        .user-type-tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            background-color: #f8f9fa;
+            transition: all 0.3s ease;
+        }
+        .user-type-tab.active {
+            background-color: #db7f34;
+            color: white;
+        }
+        .user-type-tab:hover:not(.active) {
+            background-color: #e9ecef;
+        }
+        .login-form {
+            display: none;
+        }
+        .login-form.active {
+            display: block;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 12px;
+            color: #95a5a6;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">
+            <h1>MegaPersonal</h1>
+            <p>Sistema de Gerenciamento para Personal Trainers</p>
+        </div>
+        
+        <div class="user-type-selector">
+            <div class="user-type-tabs">
+                <div class="user-type-tab active" id="trainerTab" onclick="switchUserType('trainer')">Personal Trainer</div>
+                <div class="user-type-tab" id="studentTab" onclick="switchUserType('student')">Aluno</div>
+            </div>
+        </div>
+        
+        <!-- Formulário de login para Personal Trainers -->
+        <form method="POST" action="{{ url_for('login') }}" id="trainerForm" class="login-form active">
+            <div class="form-group">
+                <label for="trainer_email">Email</label>
+                <input type="email" id="trainer_email" name="email" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="trainer_password">Senha</label>
+                <input type="password" id="trainer_password" name="password" required>
+            </div>
+            
+            <input type="hidden" name="user_type" value="trainer">
+            <button type="submit">Entrar como Personal</button>
+            
+            {% if error and user_type == 'trainer' %}
+            <div class="error-message">
+                {{ error }}
+            </div>
+            {% endif %}
+        </form>
+        
+        <!-- Formulário de login para Alunos -->
+        <form method="POST" action="{{ url_for('login') }}" id="studentForm" class="login-form">
+            <div class="form-group">
+                <label for="student_username">Nome de Usuário</label>
+                <input type="text" id="student_username" name="username" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="student_password">Senha</label>
+                <input type="password" id="student_password" name="password" required>
+            </div>
+            
+            <input type="hidden" name="user_type" value="student">
+            <button type="submit">Entrar como Aluno</button>
+            
+            {% if error and user_type == 'student' %}
+            <div class="error-message">
+                {{ error }}
+            </div>
+            {% endif %}
+        </form>
+        
+        <div class="footer">
+            <p id="trainerFooter">Acesse seus clientes, treinos e avaliações.</p>
+            <p id="studentFooter" style="display: none;">Entre em contato com seu personal trainer se tiver problemas para acessar.</p>
+        </div>
+    </div>
+
+    <script>
+        function switchUserType(type) {
+            // Atualiza as tabs
+            document.getElementById('trainerTab').classList.remove('active');
+            document.getElementById('studentTab').classList.remove('active');
+            document.getElementById(type + 'Tab').classList.add('active');
+            
+            // Atualiza os formulários
+            document.getElementById('trainerForm').classList.remove('active');
+            document.getElementById('studentForm').classList.remove('active');
+            document.getElementById(type + 'Form').classList.add('active');
+            
+            // Atualiza o footer
+            document.getElementById('trainerFooter').style.display = type === 'trainer' ? 'block' : 'none';
+            document.getElementById('studentFooter').style.display = type === 'student' ? 'block' : 'none';
+        }
+        
+        // Se houver um erro específico para um tipo de usuário, mostra o formulário correspondente
+        {% if user_type == 'student' %}
+            switchUserType('student');
+        {% endif %}
+    </script>
+</body>
+</html>
