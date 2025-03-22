@@ -150,33 +150,49 @@ def login():
         return redirect(url_for('dashboard'))
     if 'client_id' in session:
         return redirect(url_for('client_dashboard'))
-    
+
     error = None
     user_type = request.form.get('user_type', 'trainer')
-    
+
     if request.method == 'POST':
         user_type = request.form.get('user_type')
-        
+
         if user_type == 'trainer':
             email = request.form.get('email')
             password = request.form.get('password')
-            
+
             trainer = Trainer.query.filter_by(email=email).first()
-            
+
             if trainer and check_password_hash(trainer.password, password):
                 # Verificar se a conta está ativa
                 if not trainer.is_active:
                     error = 'Esta conta está desativada. Entre em contato com o administrador.'
                     return render_template('login.html', error=error, user_type=user_type)
-                    
+
                 session['trainer_id'] = trainer.id
                 session['trainer_name'] = trainer.name
                 return redirect(url_for('dashboard'))
             else:
                 error = 'Email ou senha incorretos'
-        
-        # Resto do código permanece igual...
-    
+
+
+
+        elif user_type == 'student':
+             # Login de aluno
+             username = request.form.get('username')
+             password = request.form.get('password')
+
+             client_user = ClientUser.query.filter_by(username=username).first()
+
+             if client_user and check_password_hash(client_user.password, password):
+                 session['client_id'] = client_user.client_id
+                 client_user.last_login = datetime.utcnow()
+                 db.session.commit()
+                 return redirect(url_for('client_dashboard'))
+             else:
+                 error = 'Nome de usuário ou senha incorretos'
+
+
     return render_template('login.html', error=error, user_type=user_type)
 
 # Adicione esta rota para garantir que o logout funcione independente do tipo de usuário
