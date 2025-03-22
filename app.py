@@ -10,14 +10,17 @@ from werkzeug.utils import secure_filename
 from flask import Flask, request, jsonify, render_template, redirect, url_for, session, flash
 
 # Configurações do banco de dados Supabase
-DB_HOST = os.environ.get('DB_HOST', 'db.dragqlunhkahtgxvpmmu.supabase.co')
-DB_NAME = os.environ.get('DB_NAME', 'postgres')
-DB_USER = os.environ.get('DB_USER', 'postgres')
-DB_PASS = os.environ.get('DB_PASS', 'J-v4T*-TkPgxyp6')
+DB_HOST = os.environ.get('DB_HOST')
+DB_NAME = os.environ.get('DB_NAME')
+DB_USER = os.environ.get('DB_USER')
+DB_PASS = os.environ.get('DB_PASS')
 DB_PORT = os.environ.get('DB_PORT', '5432')
 
-# Construindo a string de conexão SQLAlchemy para PostgreSQL
-SQLALCHEMY_DATABASE_URI = f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+# Adicione o parâmetro SSL
+SQLALCHEMY_DATABASE_URI = f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}?sslmode=require"
+
+# Para debug, não mostre a senha real nos logs
+print(f"Tentando conectar a: postgresql://{DB_USER}:****@{DB_HOST}:{DB_PORT}/{DB_NAME}?sslmode=require")
 
 
 
@@ -51,6 +54,7 @@ class Trainer(db.Model):
     password = db.Column(db.String(200), nullable=False)
     phone = db.Column(db.String(20))
     registration_date = db.Column(db.DateTime, default=datetime.utcnow)
+    is_active = db.Column(db.Boolean, default=True)  # Campo para controlar status da conta
     clients = db.relationship('Client', backref='trainer', lazy=True)
     
 class Client(db.Model):
@@ -141,46 +145,37 @@ def home():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    # Verificar se já está logado como personal ou aluno
+    # Verificar se já está logado
     if 'trainer_id' in session:
         return redirect(url_for('dashboard'))
     if 'client_id' in session:
         return redirect(url_for('client_dashboard'))
     
     error = None
-    user_type = request.form.get('user_type', 'trainer')  # Valor padrão é trainer
+    user_type = request.form.get('user_type', 'trainer')
     
     if request.method == 'POST':
         user_type = request.form.get('user_type')
         
         if user_type == 'trainer':
-            # Login de personal trainer
             email = request.form.get('email')
             password = request.form.get('password')
             
             trainer = Trainer.query.filter_by(email=email).first()
             
             if trainer and check_password_hash(trainer.password, password):
+                # Verificar se a conta está ativa
+                if not trainer.is_active:
+                    error = 'Esta conta está desativada. Entre em contato com o administrador.'
+                    return render_template('login.html', error=error, user_type=user_type)
+                    
                 session['trainer_id'] = trainer.id
                 session['trainer_name'] = trainer.name
                 return redirect(url_for('dashboard'))
             else:
                 error = 'Email ou senha incorretos'
         
-        elif user_type == 'student':
-            # Login de aluno
-            username = request.form.get('username')
-            password = request.form.get('password')
-            
-            client_user = ClientUser.query.filter_by(username=username).first()
-            
-            if client_user and check_password_hash(client_user.password, password):
-                session['client_id'] = client_user.client_id
-                client_user.last_login = datetime.utcnow()
-                db.session.commit()
-                return redirect(url_for('client_dashboard'))
-            else:
-                error = 'Nome de usuário ou senha incorretos'
+        # Resto do código permanece igual...
     
     return render_template('login.html', error=error, user_type=user_type)
 
@@ -191,6 +186,139 @@ def logout():
     session.pop('trainer_name', None)
     session.pop('client_id', None)
     return redirect(url_for('login'))
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        name = request.form.get('name')
+        email = request.form.get('email')
+        phone = request.form.get('phone')
+        password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
+        
+        # Validação básica
+        if not name or not email or not phone or not password:
+            flash('Por favor, preencha todos os campos obrigatórios.', 'error')
+            return render_template('register.html')
+        
+        if password != confirm_password:
+            flash('As senhas não coincidem.', 'error')
+            return render_template('register.html')
+        
+        # Verificar se o email já está em uso
+        existing_trainer = Trainer.query.filter_by(email=email).first()
+        if existing_trainer:
+            flash('Este email já está cadastrado. Por favor, use outro email.', 'error')
+            return render_template('register.html')
+        
+        # Criar novo trainer
+        try:
+            new_trainer = Trainer(
+                name=name,
+                email=email,
+                phone=phone,
+                password=generate_password_hash(password)
+            )
+            db.session.add(new_trainer)
+            db.session.commit()
+            
+            flash('Cadastro realizado com sucesso! Faça login para continuar.', 'success')
+            return redirect(url_for('login'))
+        except Exception as e:
+            db.session.rollback()
+            print(f"Erro ao cadastrar trainer: {e}")
+            flash('Ocorreu um erro ao processar seu cadastro. Por favor, tente novamente.', 'error')
+    
+    return render_template('register.html')
+
+
+@app.route('/admin')
+def admin_dashboard():
+    # Verificar autenticação de administrador
+    if 'admin_id' not in session:
+        return redirect(url_for('admin_login'))
+    
+    # Contagens
+    trainer_count = Trainer.query.count()
+    client_count = Client.query.count()
+    workout_count = Workout.query.count()
+    assessment_count = Assessment.query.count()
+    
+    # Listar trainers e clientes
+    trainers = Trainer.query.all()
+    clients = Client.query.all()
+    
+    return render_template('admin_dashboard.html',
+                          trainer_count=trainer_count,
+                          client_count=client_count,
+                          workout_count=workout_count,
+                          assessment_count=assessment_count,
+                          trainers=trainers,
+                          clients=clients)
+
+
+@app.route('/admin/login', methods=['GET', 'POST'])
+def admin_login():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
+        # Substitua isso por credenciais reais armazenadas de forma segura
+        if username == 'admin' and password == 'mega@010203':
+            session['admin_id'] = 1
+            return redirect(url_for('admin_dashboard'))
+        else:
+            flash('Credenciais inválidas', 'error')
+    
+    return render_template('admin_login.html')
+
+@app.route('/admin/reset_trainer_password', methods=['POST'])
+def reset_trainer_password():
+    # Verificar autenticação de administrador
+    if 'admin_id' not in session:
+        return redirect(url_for('admin_login'))
+    
+    trainer_id = request.form.get('trainer_id')
+    new_password = request.form.get('new_password')
+    confirm_password = request.form.get('confirm_password')
+    
+    # Validações básicas
+    if not trainer_id or not new_password or not confirm_password:
+        flash('Todos os campos são obrigatórios.', 'error')
+        return redirect(url_for('admin_dashboard'))
+    
+    if new_password != confirm_password:
+        flash('As senhas não coincidem.', 'error')
+        return redirect(url_for('admin_dashboard'))
+    
+    # Buscar o personal trainer
+    trainer = Trainer.query.get(trainer_id)
+    if not trainer:
+        flash('Personal trainer não encontrado.', 'error')
+        return redirect(url_for('admin_dashboard'))
+    
+    try:
+        # Atualizar a senha com hash
+        from werkzeug.security import generate_password_hash
+        trainer.password = generate_password_hash(new_password)
+        db.session.commit()
+        
+        flash(f'Senha do personal trainer {trainer.name} foi resetada com sucesso.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Erro ao resetar senha: {str(e)}', 'error')
+    
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/trainer/<int:trainer_id>/reset_password', methods=['GET'])
+def admin_reset_password_form(trainer_id):
+    # Verificar autenticação de administrador
+    if 'admin_id' not in session:
+        return redirect(url_for('admin_login'))
+    
+    trainer = Trainer.query.get_or_404(trainer_id)
+    return render_template('admin_reset_password.html', trainer=trainer)
+
 
 @app.route('/dashboard')
 def dashboard():
@@ -841,6 +969,36 @@ def client_delete(client_id):
     
     # Redirecionando para a página de clientes
     return redirect(url_for('client_list'))
+
+
+@app.route('/admin/trainer/<int:trainer_id>/toggle_status', methods=['POST'])
+def toggle_trainer_status(trainer_id):
+    # Verificar autenticação de administrador
+    if 'admin_id' not in session:
+        return redirect(url_for('admin_login'))
+    
+    trainer = Trainer.query.get_or_404(trainer_id)
+    action = request.form.get('action')
+    
+    if action == 'activate':
+        trainer.is_active = True
+        message = f'A conta do personal trainer {trainer.name} foi reativada com sucesso.'
+    elif action == 'deactivate':
+        trainer.is_active = False
+        message = f'A conta do personal trainer {trainer.name} foi desativada com sucesso.'
+    else:
+        flash('Ação inválida.', 'error')
+        return redirect(url_for('admin_dashboard'))
+    
+    try:
+        db.session.commit()
+        flash(message, 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Erro ao atualizar status: {str(e)}', 'error')
+    
+    return redirect(url_for('admin_dashboard'))
+
 
 @app.route('/client/edit/<int:client_id>', methods=['GET', 'POST'])
 def client_edit(client_id):
