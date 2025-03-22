@@ -365,7 +365,28 @@
             <div class="right-panel">
                 <div class="filter-container">
                     <input type="text" id="searchExercise" class="search-box" placeholder="Buscar exercício...">
-                    
+                   
+                   
+                   
+                   <script>
+                        document.getElementById('searchExercise').addEventListener('keyup', function() {
+                            const searchTerm = this.value.toLowerCase();
+                            const rows = document.querySelectorAll('.exercise-list table tbody tr');
+                            
+                            rows.forEach(row => {
+                                const name = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                                const muscleGroup = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
+                                
+                                if (name.includes(searchTerm) || muscleGroup.includes(searchTerm)) {
+                                    row.style.display = '';
+                                } else {
+                                    row.style.display = 'none';
+                                }
+                            });
+                        });
+                        </script>
+
+                        
                     <div class="filter-group">
                         <label for="filterMuscle">Filtrar por:</label>
                         <select id="filterMuscle">

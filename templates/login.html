@@ -343,6 +343,10 @@ input, select, textarea {
                 {{ error }}
             </div>
             {% endif %}
+            <!-- CRIAÇÃO DE login para Personal Trainers -->
+            <div class="register-link" style="text-align: center; margin-top: 15px;">
+                <p>Não tem uma conta? <a href="{{ url_for('register') }}" style="color: #db7f34; text-decoration: none;">Cadastre-se como Personal Trainer</a></p>
+            </div>
         </form>
         
         <!-- Formulário de login para Alunos -->
