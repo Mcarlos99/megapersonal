@@ -8,6 +8,8 @@ from datetime import datetime, timedelta
 import os
 from werkzeug.utils import secure_filename
 from flask import Flask, request, jsonify, render_template, redirect, url_for, session, flash
+import requests
+
 
 # Configurações do banco de dados Supabase
 DB_HOST = os.environ.get('DB_HOST')
@@ -98,10 +100,31 @@ class WorkoutExercise(db.Model):
     notes = db.Column(db.Text)
     order = db.Column(db.Integer)  # Ordem do exercício no treino
 
+class WorkoutTemplate(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text)
+    created_date = db.Column(db.DateTime, default=datetime.utcnow)
+    trainer_id = db.Column(db.Integer, db.ForeignKey('trainer.id'), nullable=False)
+    exercises = db.relationship('WorkoutTemplateExercise', backref='workout_template', lazy=True)
+
+class WorkoutTemplateExercise(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    template_id = db.Column(db.Integer, db.ForeignKey('workout_template.id'), nullable=False)
+    exercise_id = db.Column(db.Integer, db.ForeignKey('exercise.id'), nullable=False)
+    sets = db.Column(db.Integer)
+    reps = db.Column(db.String(50))
+    rest_time = db.Column(db.Integer)
+    notes = db.Column(db.Text)
+    order = db.Column(db.Integer)
+    exercise = db.relationship('Exercise', backref='template_exercises', lazy=True)
+
 class Assessment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     client_id = db.Column(db.Integer, db.ForeignKey('client.id'), nullable=False)
     date = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Medidas básicas atuais
     weight = db.Column(db.Float)
     body_fat = db.Column(db.Float)
     chest = db.Column(db.Float)
@@ -109,8 +132,27 @@ class Assessment(db.Model):
     hips = db.Column(db.Float)
     arms = db.Column(db.Float)
     thighs = db.Column(db.Float)
+    
+    # Novas medidas antropométricas
+    neck = db.Column(db.Float)
+    shoulders = db.Column(db.Float)
+    forearms = db.Column(db.Float)
+    wrists = db.Column(db.Float)
+    calves = db.Column(db.Float)
+    ankles = db.Column(db.Float)
+    abdomen = db.Column(db.Float)
+    
+    # Dobras cutâneas (em mm)
+    skinfold_triceps = db.Column(db.Float)
+    skinfold_biceps = db.Column(db.Float)
+    skinfold_subscapular = db.Column(db.Float)
+    skinfold_suprailiac = db.Column(db.Float)
+    skinfold_abdominal = db.Column(db.Float)
+    skinfold_thigh = db.Column(db.Float)
+    skinfold_calf = db.Column(db.Float)
+    
+    # Outros campos existentes
     notes = db.Column(db.Text)
-    # Novos campos para fotos
     front_photo = db.Column(db.String(255))
     side_photo = db.Column(db.String(255))
     back_photo = db.Column(db.String(255))
@@ -133,6 +175,48 @@ class ClientUser(db.Model):
     is_active = db.Column(db.Boolean, default=True)
     last_login = db.Column(db.DateTime)
     created_date = db.Column(db.DateTime, default=datetime.utcnow)
+
+# notificações para o Telegram
+def send_telegram_notification(message):
+    bot_token = '7646480970:AAFIYtXFw75ER4cqsidZXV3ZAxTw_BdAEvo'  # Substitua pelo token que você obteve do BotFather
+    chat_id = '849913605'  # Substitua pelo seu chat ID 
+    url = f'https://api.telegram.org/bot{bot_token}/sendMessage'
+    data = {
+        'chat_id': chat_id,
+        'text': message,
+        'parse_mode': 'HTML'  # Permite formatação básica HTML
+    }
+    try:
+        response = requests.post(url, data=data)
+        return response.json()
+    except Exception as e:
+        print(f"Erro ao enviar mensagem Telegram: {e}")
+        return None
+
+def notify_new_trainer_registration(trainer):
+    message = f"<b>🏋️ Novo Personal Trainer Cadastrado!</b>\n\n" \
+              f"<b>Nome:</b> {trainer.name}\n" \
+              f"<b>Email:</b> {trainer.email}\n" \
+              f"<b>Telefone:</b> {trainer.phone}\n" \
+              f"<b>Data:</b> {datetime.utcnow().strftime('%d/%m/%Y %H:%M')}"
+    
+    return send_telegram_notification(message)
+
+def notify_new_client_added(client, trainer):
+    message = f"<b>👤 Novo Aluno Adicionado!</b>\n\n" \
+              f"<b>Nome:</b> {client.name}\n" \
+              f"<b>Email:</b> {client.email}\n" \
+              f"<b>Telefone:</b> {client.phone}\n" \
+              f"<b>Objetivo:</b> {client.goal}\n" \
+              f"<b>Personal:</b> {trainer.name}\n" \
+              f"<b>Data:</b> {datetime.utcnow().strftime('%d/%m/%Y %H:%M')}"
+    
+    return send_telegram_notification(message)
+
+
+
+
+
 
 # Rotas para API e renderização de páginas
 @app.route('/')
@@ -237,6 +321,9 @@ def register():
             )
             db.session.add(new_trainer)
             db.session.commit()
+            
+            # Enviar notificação Telegram
+            notify_new_trainer_registration(new_trainer)
             
             flash('Cadastro realizado com sucesso! Faça login para continuar.', 'success')
             return redirect(url_for('login'))
@@ -418,6 +505,15 @@ def client_new():
         
         db.session.add(client)
         db.session.commit()
+
+
+        # Buscar informações do trainer para a notificação
+        trainer = Trainer.query.get(session['trainer_id'])
+        
+        # Enviar notificação Telegram
+        notify_new_client_added(client, trainer)
+
+
         
         return redirect(url_for('client_detail', client_id=client.id))
     
@@ -533,6 +629,7 @@ def assessment_new(client_id):
         return redirect(url_for('clients'))
     
     if request.method == 'POST':
+        # Campos básicos atuais
         weight = request.form.get('weight')
         body_fat = request.form.get('body_fat')
         chest = request.form.get('chest')
@@ -542,7 +639,25 @@ def assessment_new(client_id):
         thighs = request.form.get('thighs')
         notes = request.form.get('notes')
         
-        # Criar nova avaliação
+        # Novas medidas antropométricas
+        neck = request.form.get('neck')
+        shoulders = request.form.get('shoulders')
+        forearms = request.form.get('forearms')
+        wrists = request.form.get('wrists')
+        calves = request.form.get('calves')
+        ankles = request.form.get('ankles')
+        abdomen = request.form.get('abdomen')
+        
+        # Dobras cutâneas
+        skinfold_triceps = request.form.get('skinfold_triceps')
+        skinfold_biceps = request.form.get('skinfold_biceps')
+        skinfold_subscapular = request.form.get('skinfold_subscapular')
+        skinfold_suprailiac = request.form.get('skinfold_suprailiac')
+        skinfold_abdominal = request.form.get('skinfold_abdominal')
+        skinfold_thigh = request.form.get('skinfold_thigh')
+        skinfold_calf = request.form.get('skinfold_calf')
+        
+        # Criar nova avaliação com todos os campos
         assessment = Assessment(
             client_id=client.id,
             weight=weight,
@@ -552,6 +667,25 @@ def assessment_new(client_id):
             hips=hips,
             arms=arms,
             thighs=thighs,
+            
+            # Novas medidas antropométricas
+            neck=neck,
+            shoulders=shoulders,
+            forearms=forearms,
+            wrists=wrists,
+            calves=calves,
+            ankles=ankles,
+            abdomen=abdomen,
+            
+            # Dobras cutâneas
+            skinfold_triceps=skinfold_triceps,
+            skinfold_biceps=skinfold_biceps,
+            skinfold_subscapular=skinfold_subscapular,
+            skinfold_suprailiac=skinfold_suprailiac,
+            skinfold_abdominal=skinfold_abdominal,
+            skinfold_thigh=skinfold_thigh,
+            skinfold_calf=skinfold_calf,
+            
             notes=notes
         )
         
@@ -1014,6 +1148,254 @@ def toggle_trainer_status(trainer_id):
         flash(f'Erro ao atualizar status: {str(e)}', 'error')
     
     return redirect(url_for('admin_dashboard'))
+
+
+
+
+
+
+@app.route('/workout-templates')
+def workout_templates():
+    if 'trainer_id' not in session:
+        return redirect(url_for('login'))
+    
+    trainer_id = session['trainer_id']
+    templates = WorkoutTemplate.query.filter_by(trainer_id=trainer_id).all()
+    
+    return render_template('workout_templates.html', templates=templates)
+
+@app.route('/workout-template/new', methods=['GET', 'POST'])
+def workout_template_new():
+    if 'trainer_id' not in session:
+        return redirect(url_for('login'))
+    
+    if request.method == 'POST':
+        name = request.form.get('name')
+        description = request.form.get('description')
+        
+        template = WorkoutTemplate(
+            name=name,
+            description=description,
+            trainer_id=session['trainer_id']
+        )
+        
+        db.session.add(template)
+        db.session.commit()
+        
+        return redirect(url_for('workout_template_edit', template_id=template.id))
+    
+    return render_template('workout_template_form.html')
+
+
+
+@app.route('/workout-template/edit/<int:template_id>', methods=['GET', 'POST'])
+def workout_template_edit(template_id):
+    if 'trainer_id' not in session:
+        return redirect(url_for('login'))
+    
+    template = WorkoutTemplate.query.get_or_404(template_id)
+    
+    # Verificar se o template pertence ao trainer logado
+    if template.trainer_id != session['trainer_id']:
+        return redirect(url_for('workout_templates'))
+    
+    # Obter todos os exercícios disponíveis
+    exercises = Exercise.query.all()
+    
+    # Obter exercícios já adicionados ao template
+    template_exercises = WorkoutTemplateExercise.query.filter_by(template_id=template.id).order_by(WorkoutTemplateExercise.order).all()
+    
+    if request.method == 'POST':
+        # Verificar se é ação de adicionar exercício
+        exercise_id = request.form.get('exercise_id')
+        
+        if exercise_id:
+            exercise_id = int(exercise_id)
+            sets = int(request.form.get('sets', 3))
+            reps = request.form.get('reps', '12')
+            rest_time = int(request.form.get('rest_time', 60))
+            notes = request.form.get('notes', '')
+            order = int(request.form.get('order', len(template_exercises) + 1))
+            
+            # Verificar se o exercício existe
+            exercise = Exercise.query.get(exercise_id)
+            if not exercise:
+                flash('Exercício não encontrado.', 'error')
+                return redirect(url_for('workout_template_edit', template_id=template.id))
+            
+            # Criar novo exercício de template
+            template_exercise = WorkoutTemplateExercise(
+                template_id=template.id,
+                exercise_id=exercise_id,
+                sets=sets,
+                reps=reps,
+                rest_time=rest_time,
+                notes=notes,
+                order=order
+            )
+            
+            # Adicionar ao banco de dados
+            db.session.add(template_exercise)
+            db.session.commit()
+            
+            flash('Exercício adicionado com sucesso!', 'success')
+            return redirect(url_for('workout_template_edit', template_id=template.id))
+        
+        # Verificar se é ação de remover exercício
+        remove_id = request.form.get('remove_exercise_id')
+        if remove_id:
+            template_exercise = WorkoutTemplateExercise.query.get(int(remove_id))
+            if template_exercise and template_exercise.template_id == template.id:
+                db.session.delete(template_exercise)
+                db.session.commit()
+                flash('Exercício removido com sucesso!', 'success')
+            return redirect(url_for('workout_template_edit', template_id=template.id))
+    
+    return render_template('workout_template_edit.html', 
+                          template=template, 
+                          exercises=exercises,
+                          template_exercises=template_exercises)
+
+
+@app.route('/workout-template/update/<int:template_id>', methods=['POST'])
+def workout_template_update(template_id):
+    if 'trainer_id' not in session:
+        return redirect(url_for('login'))
+    
+    template = WorkoutTemplate.query.get_or_404(template_id)
+    
+    # Verificar se o template pertence ao trainer logado
+    if template.trainer_id != session['trainer_id']:
+        return redirect(url_for('workout_templates'))
+    
+    if request.method == 'POST':
+        template.name = request.form.get('name')
+        template.description = request.form.get('description')
+        template.category = request.form.get('category', '')
+        
+        db.session.commit()
+        flash('Template atualizado com sucesso!', 'success')
+    
+    return redirect(url_for('workout_template_edit', template_id=template.id))
+
+
+@app.route('/workout-template/duplicate/<int:template_id>', methods=['POST'])
+def workout_template_duplicate(template_id):
+    if 'trainer_id' not in session:
+        return redirect(url_for('login'))
+    
+    original_template = WorkoutTemplate.query.get_or_404(template_id)
+    
+    # Verificar se o template pertence ao trainer logado
+    if original_template.trainer_id != session['trainer_id']:
+        return redirect(url_for('workout_templates'))
+    
+    if request.method == 'POST':
+        # Criar novo template baseado no original
+        new_template = WorkoutTemplate(
+            name=request.form.get('name'),
+            description=request.form.get('description'),
+            category=original_template.category,
+            trainer_id=session['trainer_id']
+        )
+        
+        db.session.add(new_template)
+        db.session.flush()  # Para obter o ID do novo template
+        
+        # Copiar os exercícios do template original
+        original_exercises = WorkoutTemplateExercise.query.filter_by(template_id=original_template.id).all()
+        
+        for orig_exercise in original_exercises:
+            new_exercise = WorkoutTemplateExercise(
+                template_id=new_template.id,
+                exercise_id=orig_exercise.exercise_id,
+                sets=orig_exercise.sets,
+                reps=orig_exercise.reps,
+                rest_time=orig_exercise.rest_time,
+                notes=orig_exercise.notes,
+                order=orig_exercise.order
+            )
+            db.session.add(new_exercise)
+        
+        db.session.commit()
+        flash(f'Template duplicado com sucesso!', 'success')
+        
+        return redirect(url_for('workout_template_edit', template_id=new_template.id))
+    
+    return redirect(url_for('workout_templates'))
+
+
+
+@app.route('/apply-template/<int:template_id>/<int:client_id>', methods=['POST'])
+def apply_template(template_id, client_id):
+    if 'trainer_id' not in session:
+        return redirect(url_for('login'))
+    
+    template = WorkoutTemplate.query.get_or_404(template_id)
+    client = Client.query.get_or_404(client_id)
+    
+    # Verificar se o trainer tem permissão
+    if template.trainer_id != session['trainer_id'] or client.trainer_id != session['trainer_id']:
+        flash('Você não tem permissão para realizar esta ação.', 'error')
+        return redirect(url_for('client_detail', client_id=client_id))
+    
+    # Criar novo treino baseado no template
+    new_workout = Workout(
+        name=template.name,
+        description=template.description,
+        client_id=client_id
+    )
+    db.session.add(new_workout)
+    db.session.flush()  # Para obter o ID do novo treino
+    
+    # Copiar os exercícios do template para o novo treino
+    for template_exercise in template.exercises:
+        workout_exercise = WorkoutExercise(
+            workout_id=new_workout.id,
+            exercise_id=template_exercise.exercise_id,
+            sets=template_exercise.sets,
+            reps=template_exercise.reps,
+            rest_time=template_exercise.rest_time,
+            notes=template_exercise.notes,
+            order=template_exercise.order
+        )
+        db.session.add(workout_exercise)
+    
+    db.session.commit()
+    flash(f'Template "{template.name}" aplicado com sucesso ao cliente {client.name}!', 'success')
+    
+    return redirect(url_for('workout_edit', workout_id=new_workout.id))
+
+
+@app.route('/workout-template/delete/<int:template_id>', methods=['POST'])
+def workout_template_delete(template_id):
+    if 'trainer_id' not in session:
+        return redirect(url_for('login'))
+    
+    template = WorkoutTemplate.query.get_or_404(template_id)
+    
+    # Verificar se o template pertence ao trainer logado
+    if template.trainer_id != session['trainer_id']:
+        flash('Você não tem permissão para excluir este template.', 'error')
+        return redirect(url_for('workout_templates'))
+    
+    try:
+        # Primeiro excluir todos os exercícios relacionados a este template
+        WorkoutTemplateExercise.query.filter_by(template_id=template.id).delete()
+        
+        # Agora excluir o próprio template
+        template_name = template.name  # Guardar o nome para usar na mensagem
+        db.session.delete(template)
+        db.session.commit()
+        
+#        flash(f'Template "{template_name}" excluído com sucesso!', 'success')
+    except Exception as e:
+        db.session.rollback()
+#        flash(f'Erro ao excluir template: {str(e)}', 'error')
+    
+    return redirect(url_for('workout_templates'))
+
+
 
 
 @app.route('/client/edit/<int:client_id>', methods=['GET', 'POST'])
