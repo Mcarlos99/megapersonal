@@ -333,6 +333,114 @@
                     </div>
                     {% endif %}
                 </div>
+                
+                <div class="data-section">
+                    <h3>Medidas Antropométricas Adicionais</h3>
+                    
+                    {% if assessment.neck %}
+                    <div class="data-row">
+                        <div class="data-label">Pescoço:</div>
+                        <div class="data-value">{{ assessment.neck|round(1) }} cm</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if assessment.shoulders %}
+                    <div class="data-row">
+                        <div class="data-label">Ombros:</div>
+                        <div class="data-value">{{ assessment.shoulders|round(1) }} cm</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if assessment.forearms %}
+                    <div class="data-row">
+                        <div class="data-label">Antebraços:</div>
+                        <div class="data-value">{{ assessment.forearms|round(1) }} cm</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if assessment.wrists %}
+                    <div class="data-row">
+                        <div class="data-label">Punhos:</div>
+                        <div class="data-value">{{ assessment.wrists|round(1) }} cm</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if assessment.abdomen %}
+                    <div class="data-row">
+                        <div class="data-label">Abdômen:</div>
+                        <div class="data-value">{{ assessment.abdomen|round(1) }} cm</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if assessment.calves %}
+                    <div class="data-row">
+                        <div class="data-label">Panturrilhas:</div>
+                        <div class="data-value">{{ assessment.calves|round(1) }} cm</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if assessment.ankles %}
+                    <div class="data-row">
+                        <div class="data-label">Tornozelos:</div>
+                        <div class="data-value">{{ assessment.ankles|round(1) }} cm</div>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="data-section">
+                    <h3>Dobras Cutâneas</h3>
+                    
+                    {% if assessment.skinfold_triceps %}
+                    <div class="data-row">
+                        <div class="data-label">Tríceps:</div>
+                        <div class="data-value">{{ assessment.skinfold_triceps|round(1) }} mm</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if assessment.skinfold_biceps %}
+                    <div class="data-row">
+                        <div class="data-label">Bíceps:</div>
+                        <div class="data-value">{{ assessment.skinfold_biceps|round(1) }} mm</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if assessment.skinfold_subscapular %}
+                    <div class="data-row">
+                        <div class="data-label">Subescapular:</div>
+                        <div class="data-value">{{ assessment.skinfold_subscapular|round(1) }} mm</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if assessment.skinfold_suprailiac %}
+                    <div class="data-row">
+                        <div class="data-label">Suprailíaca:</div>
+                        <div class="data-value">{{ assessment.skinfold_suprailiac|round(1) }} mm</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if assessment.skinfold_abdominal %}
+                    <div class="data-row">
+                        <div class="data-label">Abdominal:</div>
+                        <div class="data-value">{{ assessment.skinfold_abdominal|round(1) }} mm</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if assessment.skinfold_thigh %}
+                    <div class="data-row">
+                        <div class="data-label">Coxa:</div>
+                        <div class="data-value">{{ assessment.skinfold_thigh|round(1) }} mm</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if assessment.skinfold_calf %}
+                    <div class="data-row">
+                        <div class="data-label">Panturrilha:</div>
+                        <div class="data-value">{{ assessment.skinfold_calf|round(1) }} mm</div>
+                    </div>
+                    {% endif %}
+                </div>
+
+
             </div>
             
             <div class="assessment-photos">

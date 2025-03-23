@@ -460,8 +460,8 @@
                         }
                         
                         // Tocar um som de alerta (opcional)
-                        // const audio = new Audio('/static/audio/beep.mp3');
-                        // audio.play();
+                         const audio = new Audio('/static/audio/beep.mp3');
+                         audio.play();
                         
                         clearInterval(timerInterval);
                         isRunning = false;
@@ -563,6 +563,7 @@
                     // Reinicia o timer automaticamente quando uma série é marcada como concluída
                     resetTimer();
                     startTimer();
+
                 };
                 setCounter.appendChild(setNumber);
             }
