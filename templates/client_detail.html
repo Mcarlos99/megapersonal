@@ -261,6 +261,7 @@
             <li><a href="{{ url_for('client_list') }}">Clientes</a></li>
             <li><a href="{{ url_for('exercises') }}">Exercícios</a></li>
             <li><a href="{{ url_for('workout_templates') }}">Templates de Treino</a></li>
+            <li><a href="{{ url_for('attendance_list') }}">Presenças</a></li>
         </ul>
     </nav>
     
@@ -416,7 +417,10 @@
         <div id="attendance" class="tab-content">
             <div class="section-header">
                 <h3>Registro de Presença</h3>
-                <a href="#" class="button">Nova Sessão</a>
+                <div>
+                    <a href="{{ url_for('attendance_history', client_id=client.id) }}" class="button">Ver Histórico de Presença</a>
+                    <a href="{{ url_for('attendance_list') }}" class="button secondary">Página de Presenças</a>
+                </div>
             </div>
             
             <div class="assessments-list">

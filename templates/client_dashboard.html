@@ -145,6 +145,20 @@
     </header>
     
     <div class="container">
+
+        <!-- Adicione isso logo após a abertura da div "container" -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="flash-messages" style="margin-bottom: 20px;">
+    {% for category, message in messages %}
+    <div class="flash-message {{ category }}" style="padding: 12px 15px; border-radius: 4px; margin-bottom: 10px;">
+        {{ message }}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+
         <div class="welcome-box">
             <div class="welcome-message">
                 <h2>Olá, {{ client.name.split()[0] }}!</h2>

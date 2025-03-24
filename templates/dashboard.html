@@ -148,6 +148,7 @@
             <li><a href="{{ url_for('client_list') }}">Clientes</a></li>
             <li><a href="{{ url_for('exercises') }}">Exercícios</a></li>
             <li><a href="{{ url_for('workout_templates') }}">Templates de Treino</a></li>
+            <li><a href="{{ url_for('attendance_list') }}">Presenças</a></li>
         </ul>
     </nav>
     
@@ -167,7 +168,8 @@
             </div>
             <div class="stat-card">
                 <p>Taxa de Presença</p>
-                <h2>0%</h2>
+                <h2>{{ attendance_rate|round|int }}%</h2>
+            </div>
             </div>
         </div>
         
