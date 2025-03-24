@@ -9,6 +9,8 @@ import os
 from werkzeug.utils import secure_filename
 from flask import Flask, request, jsonify, render_template, redirect, url_for, session, flash
 import requests
+from datetime import datetime, timedelta
+
 
 
 # Configurações do banco de dados Supabase
@@ -164,6 +166,10 @@ class Attendance(db.Model):
     status = db.Column(db.String(20))  # "presente", "ausente", "justificado"
     workout_id = db.Column(db.Integer, db.ForeignKey('workout.id'))
     notes = db.Column(db.Text)
+    
+    # Adicione estas duas linhas:
+    client = db.relationship('Client', backref='attendances', lazy=True)
+    workout = db.relationship('Workout', backref='attendances', lazy=True)
 
 # Adicione este modelo ao seu arquivo app.py
 
@@ -441,11 +447,208 @@ def dashboard():
         db.func.date(Attendance.date) == today
     ).all()
     
+    # Calcular taxa de presença
+    # Pegue todas as presenças dos últimos 30 dias
+    thirty_days_ago = today - timedelta(days=30)
+    all_attendances = Attendance.query.filter(
+        Attendance.client_id.in_([client.id for client in clients]),
+        db.func.date(Attendance.date) >= thirty_days_ago
+    ).all()
+    
+    # Conta quantas presenças foram marcadas como "presente"
+    present_count = sum(1 for a in all_attendances if a.status == "presente")
+    
+    # Calcula a taxa de presença
+    attendance_rate = 0
+    if all_attendances:
+        attendance_rate = (present_count / len(all_attendances)) * 100
+    
     return render_template('dashboard.html', 
                           trainer=trainer, 
                           clients=clients, 
                           client_count=client_count,
-                          attendances_today=attendances_today)
+                          attendances_today=attendances_today,
+                          attendance_rate=attendance_rate)
+
+
+@app.route('/aluno/registrar-treino', methods=['POST'])
+def client_register_workout():
+    if 'client_id' not in session:
+        return redirect(url_for('client_login'))
+    
+    client_id = session['client_id']
+    workout_id = request.form.get('workout_id', type=int)
+    notes = request.form.get('notes', '')
+    
+    if not workout_id:
+        flash('Dados incompletos para registrar treino.', 'error')
+        return redirect(url_for('client_dashboard'))
+    
+    try:
+        # Criar registro de presença para o treino atual
+        attendance = Attendance(
+            client_id=client_id,
+            date=datetime.utcnow(),
+            status='presente',
+            workout_id=workout_id,
+            notes=notes
+        )
+        
+        db.session.add(attendance)
+        db.session.commit()
+        
+        flash('Treino registrado com sucesso!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Erro ao registrar treino: {str(e)}', 'error')
+    
+    return redirect(url_for('client_dashboard'))
+
+
+@app.route('/attendance')
+def attendance_list():
+    if 'trainer_id' not in session:
+        return redirect(url_for('login'))
+    
+    trainer = Trainer.query.get(session['trainer_id'])
+    clients = Client.query.filter_by(trainer_id=trainer.id).all()
+    
+    # Obter data para filtro (padrão: hoje)
+    filter_date_str = request.args.get('date')
+    if filter_date_str:
+        try:
+            filter_date = datetime.strptime(filter_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            filter_date = datetime.utcnow().date()
+    else:
+        filter_date = datetime.utcnow().date()
+    
+    # Obter as presenças para a data filtrada
+    attendances = Attendance.query.filter(
+        Attendance.client_id.in_([client.id for client in clients]),
+        db.func.date(Attendance.date) == filter_date
+    ).all()
+    
+    # Criar um mapa cliente_id -> informações de presença
+    attendance_dict = {}
+    
+    for attendance in attendances:
+        attendance_dict[attendance.client_id] = {
+            'id': attendance.id,
+            'status': attendance.status,
+            'notes': attendance.notes if attendance.notes else '',
+            'workout_id': attendance.workout_id
+        }
+        
+        # Adicionar nome do treino se disponível
+        if attendance.workout_id:
+            workout = Workout.query.get(attendance.workout_id)
+            attendance_dict[attendance.client_id]['workout_name'] = workout.name if workout else "Sem nome"
+        else:
+            attendance_dict[attendance.client_id]['workout_name'] = ""
+    
+    return render_template(
+        'attendance_list.html', 
+        trainer=trainer, 
+        clients=clients,
+        attendance_map=attendance_dict,
+        filter_date=filter_date
+    )
+
+
+
+@app.route('/attendance/record', methods=['POST'])
+def attendance_record():
+    if 'trainer_id' not in session:
+        return redirect(url_for('login'))
+    
+    client_id = request.form.get('client_id', type=int)
+    date_str = request.form.get('date')
+    status = request.form.get('status')
+    workout_id = request.form.get('workout_id', type=int)
+    notes = request.form.get('notes', '')
+    
+    if not client_id or not date_str or not status:
+        flash('Dados incompletos para registrar presença.', 'error')
+        return redirect(url_for('attendance_list'))
+    
+    try:
+        # Converter string de data para objeto date
+        attendance_date = datetime.strptime(date_str, '%Y-%m-%d')
+        
+        # Verificar se já existe registro para este cliente nesta data
+        existing = Attendance.query.filter_by(
+            client_id=client_id,
+            date=attendance_date
+        ).first()
+        
+        if existing:
+            # Atualizar registro existente
+            existing.status = status
+            existing.workout_id = workout_id
+            existing.notes = notes
+            db.session.commit()
+            flash('Registro de presença atualizado com sucesso!', 'success')
+        else:
+            # Criar novo registro
+            attendance = Attendance(
+                client_id=client_id,
+                date=attendance_date,
+                status=status,
+                workout_id=workout_id,
+                notes=notes
+            )
+            db.session.add(attendance)
+            db.session.commit()
+            flash('Presença registrada com sucesso!', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Erro ao registrar presença: {str(e)}', 'error')
+    
+    # Redirecionar de volta para a página de presenças com a mesma data
+    return redirect(url_for('attendance_list', date=date_str))
+
+
+
+@app.route('/attendance/history/<int:client_id>')
+def attendance_history(client_id):
+    if 'trainer_id' not in session:
+        return redirect(url_for('login'))
+    
+    client = Client.query.get_or_404(client_id)
+    
+    # Verificar se o cliente pertence ao trainer logado
+    if client.trainer_id != session['trainer_id']:
+        return redirect(url_for('client_list'))
+    
+    # Buscar histórico de presenças (últimos 3 meses)
+    three_months_ago = datetime.utcnow() - timedelta(days=90)
+    attendances = Attendance.query.filter_by(client_id=client.id)\
+                                  .filter(Attendance.date >= three_months_ago)\
+                                  .order_by(Attendance.date.desc())\
+                                  .all()
+    
+    # Calcular estatísticas
+    total = len(attendances)
+    present_count = sum(1 for a in attendances if a.status == 'presente')
+    absent_count = sum(1 for a in attendances if a.status == 'ausente')
+    justified_count = sum(1 for a in attendances if a.status == 'justificado')
+    
+    attendance_rate = 0
+    if total > 0:
+        attendance_rate = (present_count / total) * 100
+    
+    return render_template('attendance_history.html',
+                          client=client,
+                          attendances=attendances,
+                          total=total,
+                          present_count=present_count,
+                          absent_count=absent_count,
+                          justified_count=justified_count,
+                          attendance_rate=attendance_rate)
+
+
 
 @app.route('/clients')
 def client_list():
