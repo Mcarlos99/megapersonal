@@ -173,6 +173,23 @@ class Attendance(db.Model):
 
 # Adicione este modelo ao seu arquivo app.py
 
+
+class ExerciseLoad(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    client_id = db.Column(db.Integer, db.ForeignKey('client.id'), nullable=False)
+    exercise_id = db.Column(db.Integer, db.ForeignKey('exercise.id'), nullable=False)
+    weight = db.Column(db.Float, nullable=False)  # Carga em kg
+    reps_done = db.Column(db.String(50))  # Repetições realizadas
+    notes = db.Column(db.Text)  # Observações
+    date = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relacionamentos
+    client = db.relationship('Client', backref='exercise_loads')
+    exercise = db.relationship('Exercise', backref='loads')
+
+
+
+
 class ClientUser(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
@@ -1568,6 +1585,64 @@ def apply_template(template_id, client_id):
     flash(f'Template "{template.name}" aplicado com sucesso ao cliente {client.name}!', 'success')
     
     return redirect(url_for('workout_edit', workout_id=new_workout.id))
+
+
+
+@app.route('/api/exercise-load/save', methods=['POST'])
+def save_exercise_load():
+    if 'client_id' not in session:
+        return jsonify({'success': False, 'message': 'Não autenticado'}), 401
+        
+    data = request.json
+    client_id = session['client_id']
+    exercise_id = data.get('exercise_id')
+    weight = data.get('weight')
+    reps_done = data.get('reps_done', '')
+    notes = data.get('notes', '')
+    
+    if not exercise_id or not weight:
+        return jsonify({'success': False, 'message': 'Dados incompletos'}), 400
+    
+    exercise_load = ExerciseLoad(
+        client_id=client_id,
+        exercise_id=exercise_id,
+        weight=weight,
+        reps_done=reps_done,
+        notes=notes
+    )
+    
+    db.session.add(exercise_load)
+    db.session.commit()
+    
+    return jsonify({'success': True, 'message': 'Carga registrada com sucesso!'})
+
+@app.route('/api/exercise-load/<int:exercise_id>', methods=['GET'])
+def get_exercise_loads(exercise_id):
+    if 'client_id' not in session:
+        return jsonify({'success': False, 'message': 'Não autenticado'}), 401
+    
+    client_id = session['client_id']
+    
+    # Buscar o histórico de cargas para este exercício (últimos 10)
+    loads = ExerciseLoad.query.filter_by(
+        client_id=client_id, 
+        exercise_id=exercise_id
+    ).order_by(ExerciseLoad.date.desc()).limit(10).all()
+    
+    loads_data = []
+    for load in loads:
+        loads_data.append({
+            'id': load.id,
+            'date': load.date.strftime('%d/%m/%Y'),
+            'weight': load.weight,
+            'reps_done': load.reps_done,
+            'notes': load.notes
+        })
+    
+    return jsonify({'success': True, 'loads': loads_data})
+
+
+
 
 
 @app.route('/workout-template/delete/<int:template_id>', methods=['POST'])
