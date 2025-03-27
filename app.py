@@ -10,6 +10,9 @@ from werkzeug.utils import secure_filename
 from flask import Flask, request, jsonify, render_template, redirect, url_for, session, flash
 import requests
 from datetime import datetime, timedelta
+from math import ceil
+
+
 
 
 
@@ -32,6 +35,8 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'megapersonal_secret_key'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///megapersonal.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# Adicionar funções embutidas ao ambiente Jinja2
+app.jinja_env.globals.update(max=max, min=min)
 
 db = SQLAlchemy(app)
 
@@ -1031,13 +1036,66 @@ def api_workouts(client_id):
 
 # Adicione estas rotas ao seu arquivo app.py
 
+#@app.route('/exercises')
+# def exercises():
+#    if 'trainer_id' not in session:
+#        return redirect(url_for('login'))
+#    
+#    exercises = Exercise.query.all()
+#    return render_template('exercises.html', exercises=exercises)
 @app.route('/exercises')
 def exercises():
     if 'trainer_id' not in session:
         return redirect(url_for('login'))
     
-    exercises = Exercise.query.all()
-    return render_template('exercises.html', exercises=exercises)
+    # Get pagination parameters
+    page = request.args.get('page', 1, type=int)
+    per_page = 10  # Number of exercises per page
+    
+    # Get filter parameters
+    search_term = request.args.get('search', '')
+    muscle_group = request.args.get('muscle', '')
+    
+    # Build the query
+    query = Exercise.query
+    
+    # Apply filters if provided
+    if search_term:
+        query = query.filter(Exercise.name.ilike(f'%{search_term}%'))
+    if muscle_group:
+        query = query.filter(Exercise.muscle_group == muscle_group)
+    
+    # Get the total number of exercises matching the filters
+    total_exercises = query.count()
+    
+    # Calculate total pages
+    total_pages = ceil(total_exercises / per_page)
+    
+    # Ensure page is within valid range
+    page = max(1, min(page, total_pages)) if total_pages > 0 else 1
+    
+    # Get paginated exercises
+    exercises = query.order_by(Exercise.name).offset((page-1)*per_page).limit(per_page).all()
+    
+    # Get list of all muscle groups for filter dropdown
+    muscle_groups = db.session.query(Exercise.muscle_group).distinct().all()
+    muscle_groups = [group[0] for group in muscle_groups]
+    
+    return render_template(
+        'exercises.html', 
+        exercises=exercises, 
+        page=page, 
+        total_pages=total_pages,
+        per_page=per_page,
+        total_exercises=total_exercises,
+        search_term=search_term,
+        selected_muscle=muscle_group,
+        muscle_groups=muscle_groups
+    )
+
+
+
+
 
 @app.route('/exercise/new', methods=['POST'])
 def exercise_new():
