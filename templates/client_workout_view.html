@@ -598,8 +598,10 @@ th {
                         {% endif %}
                     </div>
                     <div class="exercise-actions">
-                        <button class="button" onclick="openExerciseModal({{ we.exercise.id }}, '{{ we.exercise.name }}', '{{ we.exercise.muscle_group }}', '{{ we.exercise.description|replace("'", "\\'") }}', '{{ we.exercise.video_url }}', {{ we.sets }}, '{{ we.rest_time }}')">Ver Detalhes</button>
-                    </div>
+                        <!--<button class="button" onclick="openExerciseModal({{ we.exercise.id }}, '{{ we.exercise.name }}', '{{ we.exercise.muscle_group }}', '{{ we.exercise.description|replace("'", "\\'") }}', '{{ we.exercise.video_url }}', {{ we.sets }}, '{{ we.rest_time }}')">Ver Detalhes</button>
+                        -->
+                        <button class="button" onclick="openExerciseModal({{ we.exercise.id }}, '{{ we.exercise.name }}', '{{ we.exercise.muscle_group }}', '{{ we.exercise.description|replace("'", "\\'") }}', '{{ we.exercise.video_url }}', {{ we.sets }}, '{{ we.rest_time }}', '{{ we.reps }}')">Ver Detalhes</button>
+                        </div>
                 </div>
                 {% endfor %}
             {% else %}
@@ -646,21 +648,43 @@ th {
                 <!-- A descrição será inserida aqui via JavaScript -->
             </div>
             
-            <div class="set-tracking">
+           <!-- <div class="set-tracking">
                 <h3>Acompanhamento:</h3>
                 <div id="setTrackers"></div>
-                
-            </div>
-
-                  <!-- BOTÃO PARA REGISTRAR CARGA -->
-                  <button onclick="openLoadModal()" style="background-color: #2ecc71; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; margin-top: 10px;">Registrar Carga</button>
-                  <div id="loadHistoryContainer" style="margin-top: 20px; max-height: 200px; overflow-y: auto; border-top: 1px solid #eee; padding-top: 15px;">
-                    <h3 style="margin-top: 0; color: #2c3e50;">Histórico de Cargas</h3>
-                    <div id="loadHistoryContent">
-                      <p style="text-align: center; color: #7f8c8d;">Carregando histórico...</p>
-                    </div>
+            </div> -->
+            
+            
+            <div class="set-tracking" style="background-color: #f9fafb; padding: 12px; border-radius: 6px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                  <div style="display: flex; align-items: center;">
+                    <h3 style="margin: 0; color: #2c3e50; margin-right: 8px;">Séries:</h3>
+                    <div id="setTrackers" style="display: flex; flex-direction: row; flex-wrap: nowrap; gap: 5px;"></div>
                   </div>
-      
+                  <div style="padding: 5px 12px; background-color: #f9fafb; border-radius: 4px; font-weight: bold;">
+                    <span style="color: #2c3e50;">Repetições: </span>
+                    <span id="exerciseReps" style="color: #db7f34;">15</span>
+                  </div>
+                </div>
+              </div>
+
+           
+                <!-- BOTÃO PARA REGISTRAR CARGA
+             <button onclick="openLoadModal()" style="background-color: #2ecc71; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; margin-top: 10px;">Registrar Carga</button>
+                 -->
+
+                <!-- Substitua o botão atual por este -->
+                <div style="text-align: center; margin: 15px 0;">
+                 <button onclick="openLoadModal()" style="background-color: #2ecc71; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; min-width: 180px;">Registrar Carga</button>
+                </div> 
+
+
+            <div id="loadHistoryContainer" style="margin-top: 20px; max-height: 200px; overflow-y: auto; border-top: 1px solid #eee; padding-top: 15px;">
+              <h3 style="margin-top: 0; color: #2c3e50;">Histórico de Cargas</h3>
+              <div id="loadHistoryContent">
+                 <p style="text-align: center; color: #7f8c8d;">Carregando histórico...</p>
+              </div>
+            </div>
+            
             <div class="timer-container">
                 <div class="timer">
                     <h3>Cronômetro de Descanso</h3>
@@ -675,8 +699,38 @@ th {
         </div>
     </div>
     
+<!-- Modal para registro de carga -->
+<div id="loadModal" style="display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); overflow-y: auto;">
+    <div style="background-color: white; margin: 50px auto; padding: 20px; width: 90%; max-width: 500px; border-radius: 8px; position: relative;">
+      <span style="position: absolute; top: 10px; right: 20px; font-size: 28px; font-weight: bold; cursor: pointer; color: #aaa;" onclick="document.getElementById('loadModal').style.display='none';">&times;</span>
+      
+      <h2 id="loadModalTitle" style="color: #2c3e50; margin-top: 0;">Registrar Carga</h2>
+      <p id="loadModalExerciseName" style="margin-bottom: 20px; color: #7f8c8d;">Nome do Exercício</p>
+      
+      <div style="margin-bottom: 15px;">
+        <label style="display: block; margin-bottom: 5px; font-weight: bold;">Carga (kg):</label>
+        <input type="number" id="loadWeight" min="0" step="0.5" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+      </div>
+      
+      <div style="margin-bottom: 15px;">
+        <label style="display: block; margin-bottom: 5px; font-weight: bold;">Repetições realizadas:</label>
+        <input type="text" id="loadReps" placeholder="Ex: 12,10,8" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+      </div>
+      
+      <div style="margin-bottom: 15px;">
+        <label style="display: block; margin-bottom: 5px; font-weight: bold;">Observações:</label>
+        <textarea id="loadNotes" placeholder="Sensações, dificuldades, ajustes..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; min-height: 80px;"></textarea>
+      </div>
+      
+      <button id="saveLoadButton" style="background-color: #2ecc71; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;">Registrar Carga</button>
+    </div>
+  </div>
+
+
     <script>
         // Variáveis para o cronômetro
+        let currentExerciseId = 0;
+        let currentExerciseName = '';
         let timerInterval;
         let seconds = 0;
         let isRunning = false;
@@ -809,27 +863,60 @@ function playBeepSound() {
                 `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
         }
         
-        // Função para abrir o modal com detalhes do exercício
-        function openExerciseModal(exerciseId, name, muscleGroup, description, videoUrl, sets, restTimeVal) {
-            captureExerciseInfo(exerciseId, name);
-            const modal = document.getElementById('exerciseModal');
-            const nameElement = document.getElementById('modalExerciseName');
-            const muscleElement = document.getElementById('modalMuscleGroup');
-            const mediaElement = document.getElementById('modalExerciseMedia');
-            const descElement = document.getElementById('modalExerciseDescription');
-            const setTrackersElement = document.getElementById('setTrackers');
+
+
+
+// Função para abrir o modal de registro de carga
+function openLoadModal() {
+  // Limpar campos
+  document.getElementById('loadWeight').value = '';
+  document.getElementById('loadReps').value = '';
+  document.getElementById('loadNotes').value = '';
+  
+  // Atualizar título com nome do exercício
+  document.getElementById('loadModalExerciseName').textContent = currentExerciseName;
+  
+  // Mostrar modal
+  document.getElementById('loadModal').style.display = 'block';
+}
+
+// Função para capturar informações do exercício atual
+function captureExerciseInfo(exerciseId, name) {
+  currentExerciseId = exerciseId;
+  currentExerciseName = name;
+  console.log('Exercício atual:', exerciseId, name);
+}
+
+
+
+
+// Função para abrir o modal do exercício
+function openExerciseModal(exerciseId, name, muscleGroup, description, videoUrl, sets, restTimeVal,reps) {
+  // Capturar informações do exercício
+  captureExerciseInfo(exerciseId, name);
+  
+  // Configurar o modal
+                const modal = document.getElementById('exerciseModal');
+                const nameElement = document.getElementById('modalExerciseName');
+                const muscleElement = document.getElementById('modalMuscleGroup');
+                const mediaElement = document.getElementById('modalExerciseMedia');
+                const descElement = document.getElementById('modalExerciseDescription');
+                const setTrackersElement = document.getElementById('setTrackers');
             
             // Configura o tempo de descanso para este exercício (garante que seja número)
             restTime = parseInt(restTimeVal) || 60; // Se não for um número válido, usa 60 segundos como padrão
-            console.log("Tempo de descanso configurado:", restTime, "segundos");
+
             
             // Reinicia o timer
             resetTimer();
             
-            // Define os detalhes do exercício no modal
-            nameElement.textContent = name;
-            muscleElement.textContent = muscleGroup;
-            descElement.textContent = description;
+                 // Define os detalhes do exercício no modal
+                 nameElement.textContent = name;
+                 muscleElement.textContent = muscleGroup;
+                descElement.textContent = description;
+
+                  // Adicionar esta linha para atualizar as repetições
+                 document.getElementById('exerciseReps').textContent = reps;
             
             // Configura a mídia (vídeo ou imagem)
             if (videoUrl) {
@@ -868,6 +955,10 @@ function playBeepSound() {
             setTrackersElement.innerHTML = '';
             const setCounter = document.createElement('div');
             setCounter.className = 'set-counter';
+            setCounter.style.display = 'flex';
+            setCounter.style.flexDirection = 'row';
+            setCounter.style.flexWrap = 'nowrap';
+            setCounter.style.gap = '5px';
             
             for (let i = 1; i <= sets; i++) {
                 const setNumber = document.createElement('div');
@@ -884,106 +975,47 @@ function playBeepSound() {
             }
             
             setTrackersElement.appendChild(setCounter);
+
+
+  // Limpar o histórico de cargas anterior
+            const historyContent = document.getElementById('loadHistoryContent');
+             if (historyContent) {
+               historyContent.innerHTML = '<p style="text-align: center; color: #7f8c8d;">Carregando histórico...</p>';
+              }
+
             
             // Exibe o modal
             modal.style.display = 'block';
-            
-            // Solicita permissão para notificações
-            if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
-                Notification.requestPermission();
-            }
-        }
-        
-        // Função para fechar o modal
-        function closeExerciseModal() {
-            document.getElementById('exerciseModal').style.display = 'none';
-            pauseTimer();
-        }
-        
-        // Fecha o modal quando o usuário clica fora dele
-        window.onclick = function(event) {
-            const modal = document.getElementById('exerciseModal');
-            if (event.target == modal) {
-                closeExerciseModal();
-            }
-        }
-        
-        // Configuração dos controles do cronômetro
-        document.getElementById('startTimer').addEventListener('click', startTimer);
-        document.getElementById('pauseTimer').addEventListener('click', pauseTimer);
-        document.getElementById('resetTimer').addEventListener('click', resetTimer);
-    </script>
-    <!-- Elemento de áudio oculto para o beep -->
-<audio id="beepAudio" src="/static/audio/beep.mp3" preload="auto" style="display: none;"></audio>
+
+  // Carregar o histórico de cargas para este exercício
+  loadExerciseHistory(exerciseId);
+}
 
 
-<!-- Modal simples para registro de carga -->
-<div id="loadModal" style="display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); overflow-y: auto;">
-    <div style="background-color: white; margin: 50px auto; padding: 20px; width: 90%; max-width: 500px; border-radius: 8px; position: relative;">
-      <span style="position: absolute; top: 10px; right: 20px; font-size: 28px; font-weight: bold; cursor: pointer; color: #aaa;" onclick="document.getElementById('loadModal').style.display='none';">&times;</span>
-      
-      <h2 id="loadModalTitle" style="color: #2c3e50; margin-top: 0;">Registrar Carga</h2>
-      <p id="loadModalExerciseName" style="margin-bottom: 20px; color: #7f8c8d;">Nome do Exercício</p>
-      
-      <div style="margin-bottom: 15px;">
-        <label style="display: block; margin-bottom: 5px; font-weight: bold;">Carga (kg):</label>
-        <input type="number" id="loadWeight" min="0" step="0.5" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-      </div>
-      
-      <div style="margin-bottom: 15px;">
-        <label style="display: block; margin-bottom: 5px; font-weight: bold;">Repetições realizadas:</label>
-        <input type="text" id="loadReps" placeholder="Ex: 12,10,8" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-      </div>
-      
-      <div style="margin-bottom: 15px;">
-        <label style="display: block; margin-bottom: 5px; font-weight: bold;">Observações:</label>
-        <textarea id="loadNotes" placeholder="Sensações, dificuldades, ajustes..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; min-height: 80px;"></textarea>
-      </div>
-      
-      <button id="saveLoadButton" style="background-color: #2ecc71; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;">Registrar Carga</button>
-      <div id="loadHistoryContainer" style="margin-top: 20px; max-height: 200px; overflow-y: auto; border-top: 1px solid #eee; padding-top: 15px;">
-        <h3 style="margin-top: 0; color: #2c3e50;">Histórico de Cargas</h3>
-        <div id="loadHistoryContent">
-          <p style="text-align: center; color: #7f8c8d;">Carregando histórico...</p>
-        </div>
-      </div>
-    </div>
-  </div>
-    
-
-
-  <script>
-    // Variável para armazenar o ID do exercício atual
-    let currentExerciseId = 0;
-    let currentExerciseName = '';
-    
-    // Função para abrir o modal de registro de carga
-    function openLoadModal() {
-  // Limpar campos
-  document.getElementById('loadWeight').value = '';
-  document.getElementById('loadReps').value = '';
-  document.getElementById('loadNotes').value = '';
-      
-  // Atualizar título com nome do exercício
-  document.getElementById('loadModalExerciseName').textContent = currentExerciseName;
- 
-    // Carregar histórico (adicione esta linha)
-    loadExerciseHistory(currentExerciseId);
-
-      // Mostrar modal
-      document.getElementById('loadModal').style.display = 'block';
-    }
-    
-// Adicione esta nova função para carregar o histórico
+// Função para carregar o histórico de cargas
 function loadExerciseHistory(exerciseId) {
   const historyContent = document.getElementById('loadHistoryContent');
   if (!historyContent) return;
   
-  historyContent.innerHTML = '<p style="text-align: center; color: #7f8c8d;">Carregando histórico...</p>';
+  // Certificar-se de que estamos carregando o histórico do exercício correto
+  if (exerciseId !== currentExerciseId) {
+    console.log("ID de exercício não corresponde ao atual, abortando carregamento");
+    return;
+  }
   
   fetch(`/api/exercise-load/${exerciseId}`)
-    .then(response => response.json())
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`Erro na resposta: ${response.status}`);
+      }
+      return response.json();
+    })
     .then(data => {
+      // Verificar novamente se ainda estamos no mesmo exercício
+      if (exerciseId !== currentExerciseId) return;
+      
+      console.log("Dados de carga recebidos:", data);
+      
       if (data.success && data.loads && data.loads.length > 0) {
         let historyHtml = '';
         
@@ -1002,77 +1034,146 @@ function loadExerciseHistory(exerciseId) {
         
         historyContent.innerHTML = historyHtml;
       } else {
-        historyContent.innerHTML = '<p style="text-align: center; color: #7f8c8d;">Nenhum registro de carga anterior encontrado.</p>';
+        historyContent.innerHTML = '<p style="text-align: center; color: #7f8c8d;">Nenhum registro de carga para este exercício.</p>';
       }
     })
     .catch(error => {
       console.error('Erro ao carregar histórico:', error);
-      historyContent.innerHTML = '<p style="text-align: center; color: #e74c3c;">Erro ao carregar histórico de cargas.</p>';
+      historyContent.innerHTML = '<p style="text-align: center; color: #e74c3c;">Erro ao carregar histórico. Tente novamente mais tarde.</p>';
     });
 }
 
-    // Função para capturar o ID e nome do exercício quando o modal principal abrir
-    // Esta função deve ser chamada no momento certo, dependendo de como seu modal existente funciona
-    function captureExerciseInfo(exerciseId, exerciseName) {
-      currentExerciseId = exerciseId;
-      currentExerciseName = exerciseName;
-      console.log('Exercício atual:', exerciseId, exerciseName);
-    }
-    
-    // Configurar o botão de salvar carga
-// Modifique o evento de clique do botão de salvar para recarregar o histórico após salvar
-document.getElementById('saveLoadButton').addEventListener('click', function() {
-  const weight = document.getElementById('loadWeight').value;
-  const reps = document.getElementById('loadReps').value;
-  const notes = document.getElementById('loadNotes').value;
+// Função para abrir o modal de registro de carga
+function openLoadModal() {
+  // Limpar campos
+  document.getElementById('loadWeight').value = '';
+  document.getElementById('loadReps').value = '';
+  document.getElementById('loadNotes').value = '';
   
-  if (!weight || isNaN(parseFloat(weight)) || parseFloat(weight) <= 0) {
-    alert('Por favor, informe um valor válido para a carga');
-    return;
+  // Atualizar título com nome do exercício
+  document.getElementById('loadModalExerciseName').textContent = currentExerciseName;
+  
+  // Mostrar modal
+  document.getElementById('loadModal').style.display = 'block';
+}
+
+
+            
+            // Solicita permissão para notificações
+            if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+                Notification.requestPermission();
+            }
+        
+        
+        // Função para fechar o modal
+        function closeExerciseModal() {
+            document.getElementById('exerciseModal').style.display = 'none';
+            pauseTimer();
+        }
+        
+
+        
+// Configuração para o botão de salvar carga
+document.addEventListener('DOMContentLoaded', function() {
+  // Configurar handlers para os botões do timer
+  document.getElementById('startTimer').addEventListener('click', startTimer);
+  document.getElementById('pauseTimer').addEventListener('click', pauseTimer);
+  document.getElementById('resetTimer').addEventListener('click', resetTimer);
+  
+  // Configurar handler para o botão de salvar carga
+  const saveLoadButton = document.getElementById('saveLoadButton');
+  if (saveLoadButton) {
+    saveLoadButton.addEventListener('click', function() {
+      const weight = document.getElementById('loadWeight').value;
+      const reps = document.getElementById('loadReps').value;
+      const notes = document.getElementById('loadNotes').value;
+      
+      if (!weight || isNaN(parseFloat(weight)) || parseFloat(weight) <= 0) {
+        alert('Por favor, informe um valor válido para a carga');
+        return;
+      }
+             
+  
+        // Enviar dados para o servidor
+        fetch('/api/exercise-load/save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          exercise_id: currentExerciseId,
+          weight: parseFloat(weight),
+          reps_done: reps,
+          notes: notes
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          alert(data.message || 'Carga registrada com sucesso!');
+      
+          // Limpar campos
+          document.getElementById('loadWeight').value = '';
+          document.getElementById('loadReps').value = '';
+          document.getElementById('loadNotes').value = '';
+          
+          // Recarregar o histórico
+          loadExerciseHistory(currentExerciseId);
+          
+          // Opcional: fechar o modal de carga
+          document.getElementById('loadModal').style.display = 'none';
+        } else {
+          alert('Erro ao registrar carga: ' + (data.message || 'Erro desconhecido'));
+        }
+      })
+      .catch(error => {
+        console.error('Erro ao salvar carga:', error);
+        alert('Erro ao registrar carga. Por favor, tente novamente.');
+      });
+    });
+  }
+});
+
+// Fechar modais quando clicar fora deles
+window.onclick = function(event) {
+  const exerciseModal = document.getElementById('exerciseModal');
+  const loadModal = document.getElementById('loadModal');
+  
+  if (event.target == exerciseModal) {
+    closeExerciseModal();
   }
   
-  // Enviar dados para o servidor
-  fetch('/api/exercise-load/save', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      exercise_id: currentExerciseId,
-      weight: parseFloat(weight),
-      reps_done: reps,
-      notes: notes
-    })
-  })
-  .then(response => response.json())
-  .then(data => {
-    if (data.success) {
-      alert(data.message || 'Carga registrada com sucesso!');
-      // Limpar campos
-      document.getElementById('loadWeight').value = '';
-      document.getElementById('loadReps').value = '';
-      document.getElementById('loadNotes').value = '';
+  if (event.target == loadModal) {
+    loadModal.style.display = 'none';
+  }
+};
 
-      // Recarregar histórico (adicione esta linha)
-      loadExerciseHistory(currentExerciseId);
+// Adicione esta função ao escopo global, junto com as outras funções
+function openLoadModal() {
+  // Limpar campos
+  document.getElementById('loadWeight').value = '';
+  document.getElementById('loadReps').value = '';
+  document.getElementById('loadNotes').value = '';
+  
+  // Atualizar título com nome do exercício
+  document.getElementById('loadModalExerciseName').textContent = currentExerciseName;
+  
+  // Carregar histórico
+  loadExerciseHistory(currentExerciseId);
+  
+  // Mostrar modal
+  document.getElementById('loadModal').style.display = 'block';
+}
 
-      // Fechar o modal
-      // document.getElementById('loadModal').style.display = 'none'; // Comente esta linha para manter o modal aberto e mostrar o histórico atualizado
-    } else {
-      alert('Erro ao registrar carga: ' + (data.message || 'Erro desconhecido'));
-    }
-  })
-  .catch(error => {
-    console.error('Erro ao salvar carga:', error);
-    alert('Erro ao registrar carga. Por favor, tente novamente.');
-  });
-});
+
+
+
+        // Configuração dos controles do cronômetro
+        document.getElementById('startTimer').addEventListener('click', startTimer);
+        document.getElementById('pauseTimer').addEventListener('click', pauseTimer);
+        document.getElementById('resetTimer').addEventListener('click', resetTimer);
     </script>
-
-
-
-
-
-
+    <!-- Elemento de áudio oculto para o beep -->
+<audio id="beepAudio" src="/static/audio/beep.mp3" preload="auto" style="display: none;"></audio>
 </body>
 </html>
