@@ -158,19 +158,6 @@ class Assessment(db.Model):
     front_photo = db.Column(db.String(255))
     side_photo = db.Column(db.String(255))
     back_photo = db.Column(db.String(255))
-
-class ExerciseLoad(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    client_id = db.Column(db.Integer, db.ForeignKey('client.id'), nullable=False)
-    exercise_id = db.Column(db.Integer, db.ForeignKey('exercise.id'), nullable=False)
-    weight = db.Column(db.Float, nullable=False)  # Carga em kg
-    reps_done = db.Column(db.String(50))  # Repetições realizadas
-    notes = db.Column(db.Text)  # Observações
-    date = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # Relacionamentos
-    client = db.relationship('Client', backref='exercise_loads')
-    exercise = db.relationship('Exercise', backref='loads')   
     
 class Attendance(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -195,7 +182,19 @@ class ClientUser(db.Model):
     last_login = db.Column(db.DateTime)
     created_date = db.Column(db.DateTime, default=datetime.utcnow)
 
+
+class ExerciseLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    attendance_id = db.Column(db.Integer, db.ForeignKey('attendance.id'), nullable=False)
+    workout_exercise_id = db.Column(db.Integer, db.ForeignKey('workout_exercise.id'), nullable=False)
+    weight = db.Column(db.Float)  # Carga em kg
+    notes = db.Column(db.Text)    # Observações específicas deste exercício
+    date = db.Column(db.DateTime, default=datetime.utcnow)
     
+    # Relacionamentos
+    attendance = db.relationship('Attendance', backref='exercise_logs')
+    workout_exercise = db.relationship('WorkoutExercise', backref='logs')
+
 
 # notificações para o Telegram
 def send_telegram_notification(message):
@@ -301,7 +300,6 @@ def login():
     return render_template('login.html', error=error, user_type=user_type)
 
 # Adicione esta rota para garantir que o logout funcione independente do tipo de usuário
-
 @app.route('/logout')
 def logout():
     session.pop('trainer_id', None)
@@ -355,6 +353,52 @@ def register():
             flash('Ocorreu um erro ao processar seu cadastro. Por favor, tente novamente.', 'error')
     
     return render_template('register.html')
+
+
+@app.route('/api/exercise-log', methods=['POST'])
+def save_exercise_log():
+    if 'client_id' not in session:
+        return jsonify({'success': False, 'message': 'Não autenticado'}), 401
+    
+    data = request.json
+    attendance_id = data.get('attendance_id')
+    workout_exercise_id = data.get('workout_exercise_id')
+    weight = data.get('weight')
+    notes = data.get('notes', '')
+    
+    log = ExerciseLog(
+        attendance_id=attendance_id,
+        workout_exercise_id=workout_exercise_id,
+        weight=weight,
+        notes=notes
+    )
+    
+    db.session.add(log)
+    db.session.commit()
+    
+    return jsonify({'success': True, 'log_id': log.id})
+
+@app.route('/api/exercise-log/<int:exercise_id>', methods=['GET'])
+def get_exercise_logs(exercise_id):
+    if 'client_id' not in session:
+        return jsonify({'success': False, 'message': 'Não autenticado'}), 401
+    
+    client_id = session['client_id']
+    
+    # Buscar logs deste exercício para este cliente
+    logs = ExerciseLog.query.join(Attendance).filter(
+        Attendance.client_id == client_id,
+        ExerciseLog.workout_exercise_id == exercise_id
+    ).order_by(ExerciseLog.date.desc()).limit(5).all()
+    
+    log_list = [{
+        'id': log.id,
+        'date': log.date.strftime('%d/%m/%Y'),
+        'weight': log.weight,
+        'notes': log.notes
+    } for log in logs]
+    
+    return jsonify({'success': True, 'logs': log_list})
 
 
 @app.route('/admin')
@@ -1613,69 +1657,6 @@ def workout_template_delete(template_id):
 #        flash(f'Erro ao excluir template: {str(e)}', 'error')
     
     return redirect(url_for('workout_templates'))
-
-
-
-@app.route('/api/exercise-load/<int:exercise_id>', methods=['GET'])
-def get_exercise_loads(exercise_id):
-    if 'client_id' not in session:
-        return jsonify({'success': False, 'message': 'Não autenticado'}), 401
-    
-    client_id = session['client_id']
-    
-    try:
-        # Buscar o histórico de cargas para este exercício específico
-        loads = ExerciseLoad.query.filter_by(
-            client_id=client_id, 
-            exercise_id=exercise_id  # Este filtro é crucial para mostrar apenas cargas do exercício atual
-        ).order_by(ExerciseLoad.date.desc()).limit(10).all()
-        
-        loads_data = []
-        for load in loads:
-            loads_data.append({
-                'id': load.id,
-                'date': load.date.strftime('%d/%m/%Y'),
-                'weight': load.weight,
-                'reps_done': load.reps_done,
-                'notes': load.notes
-            })
-        
-        return jsonify({'success': True, 'loads': loads_data})
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 500
-
-@app.route('/api/exercise-load/save', methods=['POST'])
-def save_exercise_load():
-    if 'client_id' not in session:
-        return jsonify({'success': False, 'message': 'Não autenticado'}), 401
-        
-    data = request.json
-    client_id = session['client_id']
-    exercise_id = data.get('exercise_id')
-    weight = data.get('weight')
-    reps_done = data.get('reps_done', '')
-    notes = data.get('notes', '')
-    
-    if not exercise_id or not weight:
-        return jsonify({'success': False, 'message': 'Dados incompletos'}), 400
-    
-    try:
-        exercise_load = ExerciseLoad(
-            client_id=client_id,
-            exercise_id=exercise_id,
-            weight=weight,
-            reps_done=reps_done,
-            notes=notes
-        )
-        
-        db.session.add(exercise_load)
-        db.session.commit()
-        
-        return jsonify({'success': True, 'message': 'Carga registrada com sucesso!'})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'success': False, 'message': str(e)}), 500
-    
 
 
 
