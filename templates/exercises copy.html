@@ -152,16 +152,11 @@
             display: flex;
             align-items: center;
             gap: 15px;
-            justify-content: center; /* Centraliza o conteúdo na tela */
         }
         .filter-group {
             display: flex;
-            align-items: center; /* Alinha verticalmente */
+            align-items: center;
             gap: 10px;
-        }
-        .filter-group label {
-            white-space: nowrap; /* Impede que o texto quebre para outra linha */
-            font-weight: bold; /* Mantém o destaque do texto */
         }
         .search-box {
             padding: 10px;
@@ -253,34 +248,23 @@
         .pagination {
             display: flex;
             justify-content: center;
-            margin: 20px 0;
+            margin-top: 20px;
             gap: 5px;
         }
-        .pagination a, .pagination span {
+        .pagination a {
             padding: 8px 12px;
             border: 1px solid #ddd;
             text-decoration: none;
             color: #db7f34;
             border-radius: 4px;
-            display: inline-block;
         }
-        .pagination a.active, .pagination span.active {
+        .pagination a.active {
             background-color: #db7f34;
             color: white;
             border-color: #db7f34;
         }
-        .pagination a:hover:not(.active):not(.disabled) {
+        .pagination a:hover:not(.active) {
             background-color: #f4f7f6;
-        }
-        .pagination .disabled {
-            color: #ccc;
-            cursor: not-allowed;
-        }
-        .pagination-info {
-            text-align: center;
-            color: #7f8c8d;
-            margin-bottom: 10px;
-            font-size: 14px;
         }
     </style>
 </head>
@@ -382,105 +366,108 @@
             
             <div class="right-panel">
                 <div class="filter-container">
-                    <form id="filterForm" method="GET" action="{{ url_for('exercises') }}">
-                        <div class="filter-group">
-                            <label for="filterMuscle">Filtrar por:</label>
-                
-                            <input type="text" id="searchExercise" name="search" class="search-box" 
-                                   placeholder="Buscar exercício..." value="{{ search_term }}">
-                
-                            <select id="filterMuscle" name="muscle">
-                                <option value="">Todos os grupos</option>
-                                {% for group in muscle_groups %}
-                                    <option value="{{ group }}" {% if selected_muscle == group %}selected{% endif %}>
-                                        {{ group }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                
-                            <button type="submit" class="button">Aplicar</button>
-                        </div>
-                    </form>
+                    <input type="text" id="searchExercise" class="search-box" placeholder="Buscar exercício...">
+                   
+                   
+                   
+                   <script>
+                        document.getElementById('searchExercise').addEventListener('keyup', function() {
+                            const searchTerm = this.value.toLowerCase();
+                            const rows = document.querySelectorAll('.exercise-list table tbody tr');
+                            
+                            rows.forEach(row => {
+                                const name = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                                const muscleGroup = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
+                                
+                                if (name.includes(searchTerm) || muscleGroup.includes(searchTerm)) {
+                                    row.style.display = '';
+                                } else {
+                                    row.style.display = 'none';
+                                }
+                            });
+                        });
+                        </script>
+
+                        
+                    <div class="filter-group">
+                        <label for="filterMuscle">Filtrar por:</label>
+                        <select id="filterMuscle">
+                            <option value="">Todos os grupos</option>
+                            <option value="Peito">Peito</option>
+                            <option value="Costas">Costas</option>
+                            <option value="Ombros">Ombros</option>
+                            <option value="Bíceps">Bíceps</option>
+                            <option value="Tríceps">Tríceps</option>
+                            <option value="Pernas">Pernas</option>
+                            <option value="Glúteos">Glúteos</option>
+                            <option value="Abdômen">Abdômen</option>
+                            <option value="Panturrilha">Panturrilha</option>
+                            <option value="Lombar">Lombar</option>
+                            <option value="Cardio">Cardio</option>
+                            <option value="Corpo inteiro">Corpo inteiro</option>
+                        </select>
+                    </div>
+                    
+                    <button class="button" onclick="applyFilters()">Aplicar</button>
                 </div>
-                
-                
                 
                 <div class="exercise-list">
                     <h2>Exercícios Disponíveis</h2>
-                    {% if total_exercises > 0 %}
-                        <div class="pagination-info">
-                            Mostrando {{ exercises|length }} de {{ total_exercises }} exercícios (Página {{ page }} de {{ total_pages }})
-                        </div>
-                        
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Vídeo</th>
-                                    <th>Nome</th>
-                                    <th>Grupo Muscular</th>
-                                    <th>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for exercise in exercises %}
-                                <tr>
-                                    <td>
-                                        {% if exercise.video_url %}
-                                            {% if 'youtube.com/watch' in exercise.video_url %}
-                                                {% set video_id = exercise.video_url.split('v=')[1].split('&')[0] if 'v=' in exercise.video_url else '' %}
-                                                <img src="https://img.youtube.com/vi/{{ video_id }}/default.jpg" alt="Thumbnail" class="exercise-image">
-                                            {% elif 'shorts' in exercise.video_url %}
-                                                {% set shorts_id = exercise.video_url.split('shorts/')[1].split('?')[0] if 'shorts/' in exercise.video_url else '' %}
-                                                <img src="https://img.youtube.com/vi/{{ shorts_id }}/default.jpg" alt="Thumbnail" class="exercise-image">
-                                            {% elif '.gif' in exercise.video_url %}
-                                                <img src="{{ exercise.video_url }}" alt="GIF exercício" class="exercise-image">
-                                            {% else %}
-                                                <div style="width: 80px; height: 60px; background-color: #ddd; display: flex; align-items: center; justify-content: center; border-radius: 4px;">
-                                                    <span style="color: #999;">Mídia</span>
-                                                </div>
-                                            {% endif %}
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Vídeo</th>
+                                <th>Nome</th>
+                                <th>Grupo Muscular</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for exercise in exercises %}
+                            <tr>
+                                <td>
+                                    {% if exercise.video_url %}
+                                        {% if 'youtube.com/watch' in exercise.video_url %}
+                                            {% set video_id = exercise.video_url.split('v=')[1].split('&')[0] if 'v=' in exercise.video_url else '' %}
+                                            <img src="https://img.youtube.com/vi/{{ video_id }}/default.jpg" alt="Thumbnail" class="exercise-image">
+                                        {% elif 'shorts' in exercise.video_url %}
+                                            {% set shorts_id = exercise.video_url.split('shorts/')[1].split('?')[0] if 'shorts/' in exercise.video_url else '' %}
+                                            <img src="https://img.youtube.com/vi/{{ shorts_id }}/default.jpg" alt="Thumbnail" class="exercise-image">
+                                        {% elif '.gif' in exercise.video_url %}
+                                            <img src="{{ exercise.video_url }}" alt="GIF exercício" class="exercise-image">
                                         {% else %}
-                                        <div style="width: 80px; height: 60px; background-color: #ddd; display: flex; align-items: center; justify-content: center; border-radius: 4px;">
-                                            <span style="color: #999;">Sem mídia</span>
-                                        </div>
+                                            <div style="width: 80px; height: 60px; background-color: #ddd; display: flex; align-items: center; justify-content: center; border-radius: 4px;">
+                                                <span style="color: #999;">Mídia</span>
+                                            </div>
                                         {% endif %}
-                                    </td>
-                                    <td>{{ exercise.name }}</td>
-                                    <td>{{ exercise.muscle_group }}</td>
-                                    <td>
-                                        <button class="button" onclick="viewExercise({{ exercise.id }})">Ver</button>
-                                        <button class="button secondary" onclick="editExercise({{ exercise.id }})">Editar</button>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                        
-                        <!-- Pagination controls -->
-                        <div class="pagination">
-                            {% if page > 1 %}
-                            <a href="{{ url_for('exercises', page=1, search=search_term, muscle=selected_muscle) }}">&laquo; Primeira</a>
-                            <a href="{{ url_for('exercises', page=page-1, search=search_term, muscle=selected_muscle) }}">&lsaquo; Anterior</a>
-                            {% else %}
-                            <span class="disabled">&laquo; Primeira</span>
-                            <span class="disabled">&lsaquo; Anterior</span>
-                            {% endif %}
-                            
-                            {% for p in range(max(1, page-2), min(total_pages+1, page+3)) %}
-                            <a href="{{ url_for('exercises', page=p, search=search_term, muscle=selected_muscle) }}" {% if p == page %}class="active"{% endif %}>{{ p }}</a>
+                                    {% else %}
+                                    <div style="width: 80px; height: 60px; background-color: #ddd; display: flex; align-items: center; justify-content: center; border-radius: 4px;">
+                                        <span style="color: #999;">Sem mídia</span>
+                                    </div>
+                                    {% endif %}
+                                </td>
+                                <td>{{ exercise.name }}</td>
+                                <td>{{ exercise.muscle_group }}</td>
+                                <td>
+                                    <button class="button" onclick="viewExercise({{ exercise.id }})">Ver</button>
+                                    <button class="button secondary" onclick="editExercise({{ exercise.id }})">Editar</button>
+                                </td>
+                            </tr>
                             {% endfor %}
-                            
-                            {% if page < total_pages %}
-                            <a href="{{ url_for('exercises', page=page+1, search=search_term, muscle=selected_muscle) }}">Próxima &rsaquo;</a>
-                            <a href="{{ url_for('exercises', page=total_pages, search=search_term, muscle=selected_muscle) }}">Última &raquo;</a>
-                            {% else %}
-                            <span class="disabled">Próxima &rsaquo;</span>
-                            <span class="disabled">Última &raquo;</span>
-                            {% endif %}
-                        </div>
-                    {% else %}
-                        <p>Nenhum exercício encontrado. {% if search_term or selected_muscle %}Tente remover os filtros.{% else %}Adicione seu primeiro exercício usando o formulário ao lado.{% endif %}</p>
+                        </tbody>
+                    </table>
+                    
+                    {% if exercises|length == 0 %}
+                    <p>Nenhum exercício cadastrado. Adicione seu primeiro exercício usando o formulário ao lado.</p>
                     {% endif %}
+                    
+                    <div class="pagination">
+                        <a href="#">&laquo;</a>
+                        <a href="#" class="active">1</a>
+                        <a href="#">2</a>
+                        <a href="#">3</a>
+                        <a href="#">&raquo;</a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -643,17 +630,15 @@
             window.location.href = `/exercise/edit/${exerciseId}`;
         }
         
-        // Quando o documento é carregado
-        document.addEventListener('DOMContentLoaded', function() {
-            // Configurar o search box para pesquisar quando o usuário digitar
-            const searchInput = document.getElementById('searchExercise');
-            searchInput.addEventListener('input', function() {
-                // Se o usuário limpar o campo de busca, resetar para a primeira página
-                if (this.value === '') {
-                    document.getElementById('filterForm').submit();
-                }
-            });
-        });
+        // Função para aplicar filtros
+        function applyFilters() {
+            const searchTerm = document.getElementById('searchExercise').value;
+            const muscleGroup = document.getElementById('filterMuscle').value;
+            
+            // Em um projeto real, isso redirecionaria para uma URL com os parâmetros de busca
+            // Por ora, apenas recarregamos a página (simulando o filtro)
+            window.location.href = `/exercises?search=${encodeURIComponent(searchTerm)}&muscle=${encodeURIComponent(muscleGroup)}`;
+        }
     </script>
 </body>
 </html>
