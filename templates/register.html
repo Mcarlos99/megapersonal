@@ -1,139 +1,309 @@
-<!-- Salve como register.html na pasta templates -->
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MegaPersonal - Cadastro de Personal Trainer</title>
-    <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            background-color: #f4f7f6;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
+{% extends "base.html" %}
+
+{% block title %}MegaPersonal - Cadastro de Personal Trainer{% endblock %}
+
+{% block page_title %}Cadastro de Personal Trainer{% endblock %}
+
+{% block additional_styles %}
+<style>
+    .register-container {
+        background-color: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--box-shadow);
+        padding: 30px;
+        max-width: 500px;
+        margin: 0 auto;
+    }
+    
+    .register-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    
+    .register-title {
+        color: var(--primary);
+        font-weight: 600;
+        margin: 0;
+        font-size: 1.5rem;
+    }
+    
+    .register-subtitle {
+        color: var(--gray);
+        margin-top: 5px;
+        font-size: 0.9rem;
+    }
+    
+    .form-divider {
+        margin: 25px 0;
+        border-top: 1px solid var(--gray-lighter);
+        position: relative;
+    }
+    
+    .form-divider-text {
+        position: absolute;
+        top: -12px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: white;
+        padding: 0 10px;
+        color: var(--gray);
+        font-size: 0.9rem;
+    }
+    
+    .password-requirements {
+        margin-top: 20px;
+        padding: 15px;
+        background-color: var(--primary-bg);
+        border-radius: var(--border-radius);
+        border-left: 4px solid var(--primary);
+    }
+    
+    .requirements-title {
+        color: var(--primary-dark);
+        margin-top: 0;
+        margin-bottom: 10px;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+    }
+    
+    .requirements-title i {
+        margin-right: 8px;
+    }
+    
+    .requirements-list {
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .requirements-list li {
+        margin-bottom: 6px;
+        display: flex;
+        align-items: center;
+        color: var(--gray);
+        font-size: 0.85rem;
+    }
+    
+    .requirements-list li i {
+        margin-right: 8px;
+        color: var(--primary);
+    }
+    
+    .input-group {
+        position: relative;
+    }
+    
+    .input-group .form-control {
+        padding-right: 40px;
+    }
+    
+    .input-group-append {
+        position: absolute;
+        right: 0;
+        top: 0;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        padding: 0 15px;
+    }
+    
+    .password-toggle {
+        background: none;
+        border: none;
+        color: var(--gray);
+        cursor: pointer;
+        transition: color 0.3s ease;
+    }
+    
+    .password-toggle:hover {
+        color: var(--primary);
+    }
+    
+    .login-link {
+        text-align: center;
+        margin-top: 25px;
+        font-size: 0.9rem;
+        color: var(--gray);
+    }
+    
+    .login-link a {
+        color: var(--primary);
+        text-decoration: none;
+        font-weight: 500;
+    }
+    
+    .login-link a:hover {
+        text-decoration: underline;
+    }
+    
+    .phone-input {
+        letter-spacing: 0.5px;
+    }
+    
+    /* Animations */
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
         }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .register-container {
+        animation: slideUp 0.4s ease-out;
+    }
+    
+    @media (max-width: 576px) {
         .register-container {
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            padding: 30px;
-            width: 400px;
-            max-width: 90%;
+            padding: 20px;
         }
-        .logo {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        .logo h1 {
-            color: #db7f34;
-            margin: 0;
-        }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            color: #333;
-        }
-        input[type="text"],
-        input[type="email"],
-        input[type="password"],
-        input[type="tel"] {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-        button {
-            background-color: #db7f34;
-            color: white;
-            border: none;
-            padding: 12px 0;
-            width: 100%;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-            margin-top: 10px;
-        }
-        button:hover {
-            background-color: #db7f34;
-        }
-        .error-message {
-            color: #e74c3c;
-            margin-top: 15px;
-            text-align: center;
-        }
-        .login-link {
-            text-align: center;
-            margin-top: 15px;
-        }
-        .login-link a {
-            color: #db7f34;
-            text-decoration: none;
-        }
-        .login-link a:hover {
-            text-decoration: underline;
-        }
-    </style>
-</head>
-<body>
-    <div class="register-container">
-        <div class="logo">
-            <h1>MegaPersonal</h1>
-            <p>Cadastro de Personal Trainer</p>
-        </div>
-        
-        {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-        <div class="flash-messages">
-            {% for category, message in messages %}
-            <div class="error-message">
-                {{ message }}
-            </div>
-            {% endfor %}
-        </div>
-        {% endif %}
-        {% endwith %}
-        
-        <form method="POST" action="{{ url_for('register') }}">
-            <div class="form-group">
-                <label for="name">Nome Completo*</label>
-                <input type="text" id="name" name="name" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="email">Email*</label>
-                <input type="email" id="email" name="email" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="phone">Telefone*</label>
-                <input type="tel" id="phone" name="phone" required placeholder="(99) 99999-9999">
-            </div>
-            
-            <div class="form-group">
-                <label for="password">Senha*</label>
-                <input type="password" id="password" name="password" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="confirm_password">Confirmar Senha*</label>
-                <input type="password" id="confirm_password" name="confirm_password" required>
-            </div>
-            
-            <button type="submit">Cadastrar</button>
-        </form>
-        
-        <div class="login-link">
-            <p>Já tem uma conta? <a href="{{ url_for('login') }}">Faça login</a></p>
-        </div>
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="register-container">
+    <div class="register-header">
+        <h1 class="register-title">Cadastro de Personal Trainer</h1>
+        <p class="register-subtitle">Crie sua conta para começar a gerenciar seus alunos</p>
     </div>
-</body>
-</html>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flash-container">
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">
+            {{ message }}
+            <button type="button" class="close-alert" aria-label="Fechar">&times;</button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+    
+    <form method="POST" action="{{ url_for('register') }}">
+        <div class="form-group">
+            <label for="name" class="form-label">Nome Completo*</label>
+            <input type="text" id="name" name="name" class="form-control" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="email" class="form-label">Email*</label>
+            <input type="email" id="email" name="email" class="form-control" required>
+            <div class="form-text">Este será seu login para acessar o sistema</div>
+        </div>
+        
+        <div class="form-group">
+            <label for="phone" class="form-label">Telefone*</label>
+            <input type="tel" id="phone" name="phone" class="form-control phone-input" required placeholder="(99) 99999-9999">
+        </div>
+        
+        <div class="form-divider">
+            <span class="form-divider-text">Credenciais de acesso</span>
+        </div>
+        
+        <div class="form-group">
+            <label for="password" class="form-label">Senha*</label>
+            <div class="input-group">
+                <input type="password" id="password" name="password" class="form-control" required>
+                <div class="input-group-append">
+                    <button type="button" class="password-toggle" data-target="password">
+                        <i class="far fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="confirm_password" class="form-label">Confirmar Senha*</label>
+            <div class="input-group">
+                <input type="password" id="confirm_password" name="confirm_password" class="form-control" required>
+                <div class="input-group-append">
+                    <button type="button" class="password-toggle" data-target="confirm_password">
+                        <i class="far fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="password-requirements">
+            <h3 class="requirements-title">
+                <i class="fas fa-shield-alt"></i> Requisitos de Senha
+            </h3>
+            <ul class="requirements-list">
+                <li><i class="fas fa-check-circle"></i> Pelo menos 6 caracteres</li>
+                <li><i class="fas fa-check-circle"></i> Combinar letras e números para maior segurança</li>
+                <li><i class="fas fa-check-circle"></i> Evite senhas fáceis como datas de nascimento</li>
+            </ul>
+        </div>
+        
+        <div class="form-buttons" style="margin-top: 25px;">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-user-plus"></i> Criar Conta
+            </button>
+        </div>
+    </form>
+    
+    <div class="login-link">
+        <p>Já tem uma conta? <a href="{{ url_for('login') }}">Faça login</a></p>
+    </div>
+</div>
+{% endblock %}
+
+{% block additional_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Formatação de telefone
+        const phoneInput = document.getElementById('phone');
+        if (phoneInput) {
+            phoneInput.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value.length > 11) value = value.slice(0, 11);
+                
+                // Format as (XX) XXXXX-XXXX
+                if (value.length > 2) {
+                    value = `(${value.slice(0, 2)}) ${value.slice(2)}`;
+                }
+                if (value.length > 10) {
+                    value = `${value.slice(0, 10)}-${value.slice(10)}`;
+                }
+                
+                e.target.value = value;
+            });
+        }
+        
+        // Toggle para mostrar/ocultar senha
+        const passwordToggles = document.querySelectorAll('.password-toggle');
+        passwordToggles.forEach(toggle => {
+            toggle.addEventListener('click', function() {
+                const targetId = this.getAttribute('data-target');
+                const input = document.getElementById(targetId);
+                
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    this.innerHTML = '<i class="far fa-eye-slash"></i>';
+                } else {
+                    input.type = 'password';
+                    this.innerHTML = '<i class="far fa-eye"></i>';
+                }
+            });
+        });
+        
+        // Validação de senha ao enviar o formulário
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function(event) {
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirm_password').value;
+            
+            if (password !== confirmPassword) {
+                event.preventDefault();
+                alert('As senhas não coincidem. Por favor, verifique e tente novamente.');
+            }
+        });
+    });
+</script>
+{% endblock %}
