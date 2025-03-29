@@ -1,274 +1,387 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MegaPersonal - Registro de Presenças</title>
-    <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            background-color: #f4f7f6;
-            margin: 0;
-            padding: 0;
+{% extends "base.html" %}
+
+{% block title %}MegaPersonal - Registro de Presenças{% endblock %}
+
+{% block page_title %}Registro de Presenças{% endblock %}
+
+{% block page_actions %}
+<a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+    <i class="fas fa-arrow-left"></i> Voltar para Dashboard
+</a>
+{% endblock %}
+
+{% block additional_styles %}
+<style>
+    .filter-container {
+        background-color: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--box-shadow);
+        padding: 20px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    
+    .date-selector {
+        display: flex;
+        align-items: center;
+    }
+    
+    .date-selector label {
+        font-weight: 500;
+        color: var(--gray-dark);
+        margin-right: 10px;
+    }
+    
+    .date-selector input[type="date"] {
+        padding: 8px 12px;
+        border: 1px solid var(--gray-lighter);
+        border-radius: var(--border-radius);
+        color: var(--gray-dark);
+    }
+    
+    .attendance-wrapper {
+        background-color: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--box-shadow);
+        overflow: hidden;
+    }
+    
+    .attendance-header {
+        padding: 20px;
+        background-color: var(--primary-bg);
+        border-bottom: 1px solid var(--gray-lighter);
+    }
+    
+    .attendance-header h3 {
+        margin: 0;
+        color: var(--primary-dark);
+        font-size: 1.2rem;
+        display: flex;
+        align-items: center;
+    }
+    
+    .attendance-header h3 i {
+        margin-right: 10px;
+        color: var(--primary);
+    }
+    
+    .attendance-body {
+        padding: 20px;
+    }
+    
+    .attendance-table {
+        width: 100%;
+    }
+    
+    .attendance-table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+        color: var(--gray-dark);
+        padding: 12px 15px;
+        text-align: left;
+        border-bottom: 1px solid var(--gray-lighter);
+    }
+    
+    .attendance-table td {
+        padding: 15px;
+        border-bottom: 1px solid var(--gray-lighter);
+        vertical-align: middle;
+    }
+    
+    .attendance-table tr:last-child td {
+        border-bottom: none;
+    }
+    
+    .attendance-table tr:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .client-info {
+        display: flex;
+        align-items: center;
+    }
+    
+    .client-avatar {
+        width: 35px;
+        height: 35px;
+        background-color: var(--primary);
+        border-radius: 50%;
+        color: white;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 10px;
+    }
+    
+    .client-name {
+        font-weight: 500;
+        color: var(--gray-dark);
+    }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .status-present {
+        background-color: #d1e7dd;
+        color: #0f5132;
+    }
+    
+    .status-absent {
+        background-color: #f8d7da;
+        color: #842029;
+    }
+    
+    .status-justified {
+        background-color: #fff3cd;
+        color: #664d03;
+    }
+    
+    .status-none {
+        background-color: #e9ecef;
+        color: #6c757d;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 5px;
+    }
+    
+    /* Modal styles */
+    .attendance-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1050;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease;
+    }
+    
+    .attendance-modal.show {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    .modal-content {
+        background-color: white;
+        border-radius: var(--border-radius);
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+        width: 100%;
+        max-width: 500px;
+        max-height: 90vh;
+        overflow-y: auto;
+        transform: translateY(20px);
+        transition: transform 0.3s ease;
+    }
+    
+    .attendance-modal.show .modal-content {
+        transform: translateY(0);
+    }
+    
+    .modal-header {
+        padding: 20px;
+        border-bottom: 1px solid var(--gray-lighter);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .modal-header h3 {
+        margin: 0;
+        color: var(--gray-dark);
+        font-size: 1.2rem;
+    }
+    
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        line-height: 1;
+        cursor: pointer;
+        color: var(--gray);
+    }
+    
+    .modal-body {
+        padding: 20px;
+    }
+    
+    .radio-group {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .radio-option {
+        flex: 1;
+        background-color: #f8f9fa;
+        border: 1px solid var(--gray-lighter);
+        border-radius: var(--border-radius);
+        padding: 12px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .radio-option:hover {
+        background-color: var(--primary-bg);
+        border-color: var(--primary-light);
+    }
+    
+    .radio-option.selected {
+        background-color: var(--primary-bg);
+        border-color: var(--primary);
+    }
+    
+    .radio-option input[type="radio"] {
+        display: none;
+    }
+    
+    .radio-label {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        font-weight: 500;
+        color: var(--gray-dark);
+    }
+    
+    .radio-icon {
+        font-size: 1.5rem;
+        color: var(--gray);
+    }
+    
+    .radio-option.selected .radio-icon {
+        color: var(--primary);
+    }
+    
+    .modal-footer {
+        padding: 15px 20px;
+        border-top: 1px solid var(--gray-lighter);
+        text-align: right;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 992px) {
+        .filter-container {
+            flex-direction: column;
+            align-items: flex-start;
         }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
+    }
+    
+    @media (max-width: 768px) {
+        .attendance-table thead {
+            display: none;
         }
-        header {
-            background-color: #db7f34;
-            color: white;
-            padding: 15px 0;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        .header-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
-        .logo h1 {
-            margin: 0;
-        }
-        .user-info {
-            display: flex;
-            align-items: center;
-        }
-        .user-info a {
-            color: white;
-            text-decoration: none;
-            margin-left: 15px;
-        }
-        .user-info a:hover {
-            text-decoration: underline;
-        }
-        .navbar {
-            background-color: #db7f34;
-            padding: 10px 0;
-        }
-        .nav-links {
-            display: flex;
-            list-style: none;
-            margin: 0;
-            padding: 0 20px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        .nav-links li {
-            margin-right: 20px;
-        }
-        .nav-links a {
-            color: white;
-            text-decoration: none;
-            padding: 5px 0;
-        }
-        .nav-links a:hover {
-            border-bottom: 2px solid white;
-        }
-        .page-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        .button {
-            background-color: #db7f34;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 4px;
-            text-decoration: none;
-            display: inline-block;
-            cursor: pointer;
-        }
-        .button:hover {
-            background-color: #c26f2e;
-        }
-        .button.secondary {
-            background-color: #95a5a6;
-        }
-        .button.secondary:hover {
-            background-color: #7f8c8d;
-        }
-        .flash-messages {
-            margin-bottom: 20px;
-        }
-        .flash-message {
-            padding: 12px 15px;
-            border-radius: 4px;
-            margin-bottom: 10px;
-        }
-        .flash-message.success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        .flash-message.error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        .date-filter {
-            display: flex;
-            align-items: center;
-            margin-bottom: 20px;
-            background-color: white;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        .date-filter label {
-            margin-right: 10px;
-            font-weight: bold;
-        }
-        .date-filter input[type="date"] {
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            margin-right: 10px;
-        }
-        .attendance-list {
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-        table {
+        
+        .attendance-table, 
+        .attendance-table tbody, 
+        .attendance-table tr, 
+        .attendance-table td {
+            display: block;
             width: 100%;
-            border-collapse: collapse;
         }
-        th, td {
-            padding: 12px 15px;
+        
+        .attendance-table tr {
+            margin-bottom: 20px;
+            border: 1px solid var(--gray-lighter);
+            border-radius: var(--border-radius);
+        }
+        
+        .attendance-table td {
+            text-align: right;
+            padding-left: 50%;
+            position: relative;
+        }
+        
+        .attendance-table td:before {
+            content: attr(data-label);
+            position: absolute;
+            left: 15px;
+            width: 45%;
+            padding-right: 10px;
+            white-space: nowrap;
             text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-        th {
-            background-color: #f4f7f6;
             font-weight: bold;
         }
-        .status-badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-        .status-present {
-            background-color: #d4edda;
-            color: #155724;
-        }
-        .status-absent {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-        .status-justified {
-            background-color: #fff3cd;
-            color: #856404;
-        }
-        .status-none {
-            background-color: #e9ecef;
-            color: #6c757d;
-        }
-        .radio-group {
-            display: flex;
-            gap: 15px;
-        }
-        .radio-option {
-            display: flex;
-            align-items: center;
-        }
-        .radio-option input[type="radio"] {
-            margin-right: 5px;
-        }
-        .notes-input {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            margin-top: 5px;
-        }
-        .workout-select {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-    </style>
-</head>
-<body>
-    <header>
-        <div class="header-content">
-            <div class="logo">
-                <h1>MegaPersonal</h1>
-            </div>
-            <div class="user-info">
-                <span>Bem-vindo, {{ trainer.name }}</span>
-                <a href="{{ url_for('logout') }}">Sair</a>
-            </div>
-        </div>
-    </header>
-    
-    <nav class="navbar">
-        <ul class="nav-links">
-            <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
-            <li><a href="{{ url_for('client_list') }}">Clientes</a></li>
-            <li><a href="{{ url_for('exercises') }}">Exercícios</a></li>
-            <li><a href="{{ url_for('workout_templates') }}">Templates de Treino</a></li>
-            <li><a href="{{ url_for('attendance_list') }}">Presenças</a></li>
-        </ul>
-    </nav>
-    
-    <div class="container">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-        <div class="flash-messages">
-            {% for category, message in messages %}
-            <div class="flash-message {{ category }}">
-                {{ message }}
-            </div>
-            {% endfor %}
-        </div>
-        {% endif %}
-        {% endwith %}
         
-        <div class="page-header">
-            <h1>Registro de Presenças</h1>
-        </div>
+        .attendance-body {
+            padding: 15px;
+        }
         
-        <div class="date-filter">
-            <form id="dateFilterForm" method="GET" action="{{ url_for('attendance_list') }}">
-                <label for="date">Data:</label>
-                <input type="date" id="date" name="date" value="{{ filter_date.strftime('%Y-%m-%d') }}" onchange="this.form.submit()">
-                <button type="submit" class="button">Filtrar</button>
-            </form>
-        </div>
+        .client-info {
+            justify-content: flex-end;
+        }
         
-        <div class="attendance-list">
-            {% if clients %}
-            <table>
+        .action-buttons {
+            justify-content: flex-end;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Date Filter -->
+<div class="filter-container">
+    <div class="date-selector">
+        <form method="GET" action="{{ url_for('attendance_list') }}" id="dateFilterForm">
+            <label for="date">Data de Registro:</label>
+            <input type="date" id="date" name="date" value="{{ filter_date.strftime('%Y-%m-%d') }}">
+            <button type="submit" class="btn btn-primary btn-sm">
+                <i class="fas fa-filter"></i> Filtrar
+            </button>
+        </form>
+    </div>
+    <div class="attendance-actions">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="printAttendance()">
+            <i class="fas fa-print"></i> Imprimir
+        </button>
+    </div>
+</div>
+
+<!-- Attendance List -->
+<div class="attendance-wrapper">
+    <div class="attendance-header">
+        <h3><i class="fas fa-calendar-check"></i> Registro de Presenças - {{ filter_date.strftime('%d/%m/%Y') }}</h3>
+    </div>
+    <div class="attendance-body">
+        {% if clients %}
+        <div class="table-responsive">
+            <table class="attendance-table">
                 <thead>
                     <tr>
-                        <th>Cliente</th>
-                        <th>Telefone</th>
-                        <th>Status</th>
-                        <th>Treino Realizado</th>
-                        <th>Observações</th>
-                        <th>Ações</th>
+                        <th width="30%">Cliente</th>
+                        <th width="15%">Telefone</th>
+                        <th width="15%">Status</th>
+                        <th width="20%">Treino</th>
+                        <th width="20%">Ações</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for client in clients %}
                     <tr>
-                        <td>
-                            <a href="{{ url_for('client_detail', client_id=client.id) }}">{{ client.name }}</a>
+                        <td data-label="Cliente">
+                            <div class="client-info">
+                                <div class="client-avatar">{{ client.name[0].upper() }}</div>
+                                <div class="client-name">{{ client.name }}</div>
+                            </div>
                         </td>
-                        <td>{{ client.phone }}</td>
-                        <td>
+                        <td data-label="Telefone">{{ client.phone }}</td>
+                        <td data-label="Status">
                             {% if client.id in attendance_map %}
                                 {% if attendance_map[client.id].status == 'presente' %}
                                     <span class="status-badge status-present">Presente</span>
@@ -281,159 +394,212 @@
                                 <span class="status-badge status-none">Não registrado</span>
                             {% endif %}
                         </td>
-                        <td>
+                        <td data-label="Treino">
                             {% if client.id in attendance_map and attendance_map[client.id].workout_name %}
                                 {{ attendance_map[client.id].workout_name }}
                             {% else %}
-                                -
+                                <span class="text-muted">-</span>
                             {% endif %}
                         </td>
-                        <td>
-                            {% if client.id in attendance_map and attendance_map[client.id].notes %}
-                                {{ attendance_map[client.id].notes }}
-                            {% else %}
-                                -
-                            {% endif %}
-                        <td>
-                            <button class="button" onclick="showAttendanceForm({{ client.id }}, '{{ client.name }}')">Registrar</button>
-                            <a href="{{ url_for('attendance_history', client_id=client.id) }}" class="button secondary">Histórico</a>
+                        <td data-label="Ações">
+                            <div class="action-buttons">
+                                <button class="btn btn-primary btn-sm" onclick="showAttendanceModal({{ client.id }}, '{{ client.name }}')">
+                                    <i class="fas fa-edit"></i> Registrar
+                                </button>
+                                <a href="{{ url_for('attendance_history', client_id=client.id) }}" class="btn btn-secondary btn-sm">
+                                    <i class="fas fa-history"></i> Histórico
+                                </a>
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
-            {% else %}
-            <p>Não há clientes cadastrados.</p>
-            {% endif %}
         </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">
+                <i class="fas fa-users-slash"></i>
+            </div>
+            <h3>Nenhum cliente cadastrado</h3>
+            <p>Você ainda não tem clientes cadastrados para registrar presenças.</p>
+            <a href="{{ url_for('client_new') }}" class="btn btn-primary">Adicionar Cliente</a>
+        </div>
+        {% endif %}
     </div>
-    
-    <!-- Modal para registrar presença -->
-    <div id="attendanceModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5);">
-        <div style="background-color: white; margin: 10% auto; padding: 20px; border-radius: 8px; width: 60%; max-width: 500px;">
-            <h2 id="modalTitle">Registrar Presença</h2>
-            <form id="attendanceForm" method="POST" action="{{ url_for('attendance_record') }}">
+</div>
+
+<!-- Modal para registrar presença -->
+<div id="attendanceModal" class="attendance-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">Registrar Presença</h3>
+            <button type="button" class="modal-close" onclick="hideAttendanceModal()">&times;</button>
+        </div>
+        
+        <form id="attendanceForm" method="POST" action="{{ url_for('attendance_record') }}">
+            <div class="modal-body">
                 <input type="hidden" id="client_id" name="client_id">
                 <input type="hidden" id="attendance_date" name="date" value="{{ filter_date.strftime('%Y-%m-%d') }}">
                 
-                <div style="margin-bottom: 15px;">
-                    <label>Status:</label>
+                <div class="form-group">
+                    <label class="form-label">Status:</label>
                     <div class="radio-group">
-                        <div class="radio-option">
-                            <input type="radio" id="status_present" name="status" value="presente" checked>
-                            <label for="status_present">Presente</label>
+                        <div class="radio-option" onclick="selectStatus('presente')">
+                            <input type="radio" id="status_present" name="status" value="presente">
+                            <label for="status_present" class="radio-label">
+                                <span class="radio-icon"><i class="fas fa-check-circle"></i></span>
+                                <span>Presente</span>
+                            </label>
                         </div>
-                        <div class="radio-option">
+                        <div class="radio-option" onclick="selectStatus('ausente')">
                             <input type="radio" id="status_absent" name="status" value="ausente">
-                            <label for="status_absent">Ausente</label>
+                            <label for="status_absent" class="radio-label">
+                                <span class="radio-icon"><i class="fas fa-times-circle"></i></span>
+                                <span>Ausente</span>
+                            </label>
                         </div>
-                        <div class="radio-option">
+                        <div class="radio-option" onclick="selectStatus('justificado')">
                             <input type="radio" id="status_justified" name="status" value="justificado">
-                            <label for="status_justified">Justificado</label>
+                            <label for="status_justified" class="radio-label">
+                                <span class="radio-icon"><i class="fas fa-exclamation-circle"></i></span>
+                                <span>Justificado</span>
+                            </label>
                         </div>
                     </div>
                 </div>
                 
-                <div style="margin-bottom: 15px;" id="workoutSelectContainer">
-                    <label for="workout_id">Treino Realizado:</label>
-                    <select id="workout_id" name="workout_id" class="workout-select">
+                <div class="form-group" id="workoutSelectContainer">
+                    <label for="workout_id" class="form-label">Treino Realizado:</label>
+                    <select id="workout_id" name="workout_id" class="form-control">
                         <option value="">Selecione um treino (opcional)</option>
                         <!-- Opções de treino serão carregadas via JavaScript -->
                     </select>
                 </div>
                 
-                <div style="margin-bottom: 15px;">
-                    <label for="notes">Observações:</label>
-                    <textarea id="notes" name="notes" class="notes-input" placeholder="Observações sobre a sessão..."></textarea>
+                <div class="form-group">
+                    <label for="notes" class="form-label">Observações:</label>
+                    <textarea id="notes" name="notes" class="form-control" rows="3" placeholder="Observações sobre a sessão..."></textarea>
                 </div>
-                
-                <div style="text-align: right;">
-                    <button type="button" class="button secondary" onclick="hideAttendanceModal()">Cancelar</button>
-                    <button type="submit" class="button">Salvar</button>
-                </div>
-            </form>
-        </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="hideAttendanceModal()">Cancelar</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Salvar Registro
+                </button>
+            </div>
+        </form>
     </div>
-    
-    <script>
-        // Função para mostrar o modal de presença
-        function showAttendanceForm(clientId, clientName) {
-            document.getElementById('modalTitle').textContent = `Registrar Presença: ${clientName}`;
-            document.getElementById('client_id').value = clientId;
-            
-            // Carregar treinos do cliente
-            fetch(`/api/workouts/${clientId}`)
-                .then(response => response.json())
-                .then(workouts => {
-                    const workoutSelect = document.getElementById('workout_id');
-                    
-                    // Limpar opções existentes
-                    workoutSelect.innerHTML = '<option value="">Selecione um treino (opcional)</option>';
-                    
-                    // Adicionar opções de treino
-                    workouts.forEach(workout => {
-                        const option = document.createElement('option');
-                        option.value = workout.id;
-                        option.textContent = workout.name;
-                        workoutSelect.appendChild(option);
-                    });
-                    
-                    // Se não houver treinos, desabilitar o select
-                    if (workouts.length === 0) {
-                        workoutSelect.innerHTML = '<option value="">Nenhum treino disponível</option>';
-                        workoutSelect.disabled = true;
-                    } else {
-                        workoutSelect.disabled = false;
-                    }
-                })
-                .catch(error => {
-                    console.error('Erro ao carregar treinos:', error);
-                    document.getElementById('workout_id').innerHTML = '<option value="">Erro ao carregar treinos</option>';
-                });
-            
-            // Exibir o modal
-            document.getElementById('attendanceModal').style.display = 'block';
-            
-            // Verificar se já existe registro para esse cliente
-            const attendanceMap = {{ attendance_map|tojson }};
-            if (attendanceMap[clientId]) {
-                const attendance = attendanceMap[clientId];
-                
-                // Definir status
-                document.querySelector(`input[name="status"][value="${attendance.status}"]`).checked = true;
-                
-                // Definir treino (será preenchido quando os treinos forem carregados)
-                // document.getElementById('workout_id').value = attendance.workout_id;
-                
-                // Definir observações
-                document.getElementById('notes').value = attendance.notes || '';
-            } else {
-                // Reset form
-                document.querySelector('input[name="status"][value="presente"]').checked = true;
-                document.getElementById('notes').value = '';
-            }
-        }
+</div>
+{% endblock %}
+
+{% block additional_scripts %}
+<script>
+    // Função para mostrar o modal de presença
+    function showAttendanceModal(clientId, clientName) {
+        // Configurar título e ID do cliente
+        document.getElementById('modalTitle').textContent = `Registrar Presença: ${clientName}`;
+        document.getElementById('client_id').value = clientId;
         
-        // Função para esconder o modal
-        function hideAttendanceModal() {
-            document.getElementById('attendanceModal').style.display = 'none';
-        }
-        
-        // Esconder modal quando clicar fora dele
-        window.onclick = function(event) {
-            const modal = document.getElementById('attendanceModal');
-            if (event.target == modal) {
-                hideAttendanceModal();
-            }
-        }
-        
-        // Mostrar/esconder campo de treino com base no status
-        document.querySelectorAll('input[name="status"]').forEach(radio => {
-            radio.addEventListener('change', function() {
-                const workoutContainer = document.getElementById('workoutSelectContainer');
-                workoutContainer.style.display = this.value === 'presente' ? 'block' : 'none';
-            });
+        // Reset do formulário
+        document.querySelectorAll('.radio-option').forEach(option => {
+            option.classList.remove('selected');
         });
-    </script>
-</body>
-</html>
+        
+        // Carregar treinos do cliente via API
+        fetch(`/api/workouts/${clientId}`)
+            .then(response => response.json())
+            .then(workouts => {
+                const workoutSelect = document.getElementById('workout_id');
+                
+                // Limpar opções existentes
+                workoutSelect.innerHTML = '<option value="">Selecione um treino (opcional)</option>';
+                
+                // Adicionar opções de treino
+                workouts.forEach(workout => {
+                    const option = document.createElement('option');
+                    option.value = workout.id;
+                    option.textContent = workout.name;
+                    workoutSelect.appendChild(option);
+                });
+                
+                // Se não houver treinos, desabilitar o select
+                if (workouts.length === 0) {
+                    workoutSelect.innerHTML = '<option value="">Nenhum treino disponível</option>';
+                }
+            })
+            .catch(error => {
+                console.error('Erro ao carregar treinos:', error);
+                document.getElementById('workout_id').innerHTML = '<option value="">Erro ao carregar treinos</option>';
+            });
+            
+        // Verificar se já existe registro para esse cliente e preencher o formulário
+        const attendanceMap = {{ attendance_map|tojson }};
+        if (attendanceMap[clientId]) {
+            const attendance = attendanceMap[clientId];
+            
+            // Selecionar o status
+            selectStatus(attendance.status);
+            
+            // Selecionar o treino (quando os treinos forem carregados)
+            setTimeout(() => {
+                if (attendance.workout_id) {
+                    document.getElementById('workout_id').value = attendance.workout_id;
+                }
+            }, 500);
+            
+            // Preencher observações
+            document.getElementById('notes').value = attendance.notes || '';
+        } else {
+            // Default para "presente" se não houver registro
+            selectStatus('presente');
+            document.getElementById('notes').value = '';
+        }
+        
+        // Mostrar o modal
+        document.getElementById('attendanceModal').classList.add('show');
+    }
+    
+    // Função para esconder o modal
+    function hideAttendanceModal() {
+        document.getElementById('attendanceModal').classList.remove('show');
+    }
+    
+    // Função para selecionar status no formulário
+    function selectStatus(status) {
+        // Remover seleção anterior
+        document.querySelectorAll('.radio-option').forEach(option => {
+            option.classList.remove('selected');
+        });
+        
+        // Marcar o radio button correto
+        document.getElementById('status_' + status).checked = true;
+        
+        // Adicionar classe de seleção ao container
+        document.getElementById('status_' + status).closest('.radio-option').classList.add('selected');
+        
+        // Mostrar/esconder o select de treino baseado no status
+        const workoutContainer = document.getElementById('workoutSelectContainer');
+        workoutContainer.style.display = status === 'presente' ? 'block' : 'none';
+    }
+    
+    // Imprimir lista de presenças
+    function printAttendance() {
+        window.print();
+    }
+    
+    // Fechar modal clicando fora
+    window.addEventListener('click', function(event) {
+        const modal = document.getElementById('attendanceModal');
+        if (event.target === modal) {
+            hideAttendanceModal();
+        }
+    });
+    
+    // Evento change para o date picker
+    document.getElementById('date').addEventListener('change', function() {
+        document.getElementById('dateFilterForm').submit();
+    });
+</script>
+{% endblock %}
